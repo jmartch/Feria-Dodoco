@@ -49,16 +49,12 @@ body {
   margin-bottom: clamp(24px, 4vw, 40px);
 }
 
-.hero__badge {
-  display: inline-grid;
-  place-items: center;
-  width: 64px;
-  height: 64px;
-  font-size: 32px;
-  background: var(--card);
-  border-radius: 50%;
-  box-shadow: var(--shadow-soft);
-  margin-bottom: 14px;
+.hero__logo {
+  display: block;
+  width: min(300px, 72%);
+  height: auto;
+  margin: 0 auto 10px;
+  filter: drop-shadow(0 6px 14px rgba(120, 90, 150, 0.18));
 }
 
 .hero__title {
