@@ -59,7 +59,16 @@
 
         <!-- Pago -->
         <div class="pay">
-          <div class="pay__field">
+          <div class="pay__method">
+            <span class="pay__method-label">Método de pago</span>
+            <div class="method-group" role="group" aria-label="Método de pago">
+              <button type="button" class="method-btn is-active" data-method="efectivo" aria-pressed="true">💵 Efectivo</button>
+              <button type="button" class="method-btn" data-method="qr" aria-pressed="false">📱 QR</button>
+              <button type="button" class="method-btn" data-method="datafono" aria-pressed="false">💳 Datáfono</button>
+            </div>
+          </div>
+
+          <div class="pay__field" id="cashFields">
             <label for="montoRecibido">Monto recibido</label>
             <input
               type="number"
@@ -69,10 +78,10 @@
               inputmode="numeric"
               placeholder="0"
             />
-          </div>
-          <div class="pay__change" id="changeRow">
-            <span>Cambio a devolver</span>
-            <strong id="changeValue">$0</strong>
+            <div class="pay__change" id="changeRow">
+              <span>Cambio a devolver</span>
+              <strong id="changeValue">$0</strong>
+            </div>
           </div>
         </div>
 

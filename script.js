@@ -12,6 +12,24 @@ const PRODUCTS = [
 const DISCOUNT_RATE = 0.1; // 10%
 const STORAGE_KEY = "dodoco_ventas"; // ventas guardadas en localStorage
 
+/* ===== Métodos de pago y sus comisiones ===== */
+// La comisión NO se muestra al vendedor; solo se refleja en el Excel (CSV).
+const PAYMENT_METHODS = {
+  efectivo: { label: "Efectivo", icon: "💵", rate: 0 },
+  qr: { label: "QR", icon: "📱", rate: 0.015 }, // 1,5%
+  datafono: { label: "Datáfono", icon: "💳", rate: 0.05 }, // 5%
+};
+
+// Método seleccionado actualmente (por defecto efectivo)
+let currentMethod = "efectivo";
+
+// Calcula comisión y neto para un método y total dados
+function commissionFor(method, total) {
+  const rate = (PAYMENT_METHODS[method] || PAYMENT_METHODS.efectivo).rate;
+  const commission = Math.round(total * rate);
+  return { rate, commission, net: total - commission };
+}
+
 /* ===== Formateador de moneda (pesos colombianos) ===== */
 const cop = new Intl.NumberFormat("es-CO", {
   style: "currency",
@@ -30,6 +48,8 @@ const discountValueEl = document.getElementById("discountValue");
 const totalFinalEl = document.getElementById("totalFinal");
 const clearButton = document.getElementById("clearButton");
 
+const methodGroup = document.querySelector(".method-group");
+const cashFields = document.getElementById("cashFields");
 const montoRecibidoEl = document.getElementById("montoRecibido");
 const changeRow = document.getElementById("changeRow");
 const changeValueEl = document.getElementById("changeValue");
@@ -162,6 +182,27 @@ function updateChange() {
   }
 }
 
+/* ===== Selección de método de pago ===== */
+function selectMethod(method) {
+  if (!PAYMENT_METHODS[method]) return;
+  currentMethod = method;
+
+  // Marca visualmente el botón activo
+  methodGroup.querySelectorAll(".method-btn").forEach((btn) => {
+    const active = btn.dataset.method === method;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+
+  // El monto recibido / cambio solo aplica a efectivo
+  const isCash = method === "efectivo";
+  cashFields.classList.toggle("is-hidden", !isCash);
+  if (!isCash) {
+    montoRecibidoEl.value = "";
+    updateChange();
+  }
+}
+
 /* ===== Saneamiento de inputs numéricos mientras se escribe ===== */
 function cleanNumericInput(input) {
   // Elimina cualquier caracter que no sea dígito (bloquea "-", ".", "e", etc.)
@@ -190,6 +231,7 @@ function clearCalculator() {
     });
   discountToggle.checked = false;
   montoRecibidoEl.value = "";
+  selectMethod("efectivo");
   recalculate();
 }
 
@@ -226,7 +268,10 @@ function registerSale() {
     return;
   }
 
-  const recibido = sanitizeInt(montoRecibidoEl.value);
+  const isCash = currentMethod === "efectivo";
+  const recibido = isCash ? sanitizeInt(montoRecibidoEl.value) : 0;
+  const { rate, commission, net } = commissionFor(currentMethod, current.total);
+
   const sale = {
     id: Date.now(),
     timestamp: new Date().toISOString(),
@@ -236,8 +281,12 @@ function registerSale() {
     discountApplied: current.applyDiscount,
     discount: current.discount,
     total: current.total,
+    method: currentMethod,
+    commissionRate: rate, // ej. 0.015 (solo para el Excel)
+    commission: commission, // reducción por comisión (solo Excel)
+    net: net, // ganancia neta (solo Excel)
     recibido: recibido,
-    cambio: recibido > 0 ? Math.max(0, recibido - current.total) : 0,
+    cambio: isCash && recibido > 0 ? Math.max(0, recibido - current.total) : 0,
   };
 
   const sales = loadSales();
@@ -314,10 +363,14 @@ function renderSales() {
         ? ` · recibido ${formatCOP(sale.recibido)} · cambio ${formatCOP(sale.cambio)}`
         : "";
 
+    // Etiqueta de método (sin mostrar comisión ni neto: eso va solo en el Excel)
+    const m = PAYMENT_METHODS[sale.method] || PAYMENT_METHODS.efectivo;
+    const metodoTxt = ` · ${m.icon} ${m.label}`;
+
     li.innerHTML = `
       <span class="sale-item__time">${time}</span>
       <span class="sale-item__details">
-        <b>${formatCOP(sale.total)}</b>${descTxt}${pagoTxt}<br />
+        <b>${formatCOP(sale.total)}</b>${metodoTxt}${descTxt}${pagoTxt}<br />
         ${productos}
       </span>
       <button type="button" class="sale-item__delete" data-id="${sale.id}" title="Eliminar venta" aria-label="Eliminar venta">✕</button>
@@ -340,30 +393,53 @@ function exportCSV() {
   const headers = [
     "Hora",
     "Productos",
+    "Método",
     "Subtotal",
     "Descuento",
-    "Total",
-    "Recibido",
+    "Total cobrado",
+    "Comisión %",
+    "Comisión $",
+    "Neto recibido",
+    "Recibido (efectivo)",
     "Cambio",
   ];
 
   const rows = sales.map((sale) => {
     const hora = new Date(sale.timestamp).toLocaleTimeString("es-CO");
     const productos = sale.items.map((it) => `${it.qty}x ${it.name}`).join(" | ");
+    const m = PAYMENT_METHODS[sale.method] || PAYMENT_METHODS.efectivo;
+    // Compatibilidad con ventas viejas que no tienen estos campos
+    const rate = sale.commissionRate != null ? sale.commissionRate : m.rate;
+    const commission =
+      sale.commission != null ? sale.commission : Math.round(sale.total * rate);
+    const net = sale.net != null ? sale.net : sale.total - commission;
+    const ratePct = (rate * 100).toString().replace(".", ",") + "%";
+
     return [
       hora,
       productos,
+      m.label,
       sale.subtotalGeneral,
       sale.discount,
       sale.total,
+      ratePct,
+      commission,
+      net,
       sale.recibido,
       sale.cambio,
     ];
   });
 
   const dayTotal = sales.reduce((sum, s) => sum + s.total, 0);
+  const dayCommission = sales.reduce((sum, s) => {
+    const m = PAYMENT_METHODS[s.method] || PAYMENT_METHODS.efectivo;
+    const rate = s.commissionRate != null ? s.commissionRate : m.rate;
+    return sum + (s.commission != null ? s.commission : Math.round(s.total * rate));
+  }, 0);
+  const dayNet = dayTotal - dayCommission;
+
   rows.push([]);
-  rows.push(["", "TOTAL DEL DÍA", "", "", dayTotal, "", ""]);
+  rows.push(["", "TOTAL DEL DÍA", "", "", "", dayTotal, "", dayCommission, dayNet, "", ""]);
 
   const escape = (v) => `"${String(v).replace(/"/g, '""')}"`;
   const csv = [headers, ...rows]
@@ -421,6 +497,11 @@ function init() {
   productList.addEventListener("input", handleProductInput);
   discountToggle.addEventListener("change", recalculate);
   montoRecibidoEl.addEventListener("input", handleMontoInput);
+
+  methodGroup.addEventListener("click", (event) => {
+    const btn = event.target.closest(".method-btn");
+    if (btn) selectMethod(btn.dataset.method);
+  });
   clearButton.addEventListener("click", clearCalculator);
   registerButton.addEventListener("click", registerSale);
 

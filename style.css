@@ -392,10 +392,62 @@ body {
   border: 1px solid var(--line);
 }
 
+.pay__method {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pay__method-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.method-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.method-btn {
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 6px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.method-btn:hover {
+  border-color: var(--accent);
+}
+
+.method-btn.is-active {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--accent-strong), var(--brand-strong));
+  box-shadow: 0 6px 14px rgba(108, 92, 231, 0.28);
+}
+
+.method-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.25);
+}
+
 .pay__field {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.pay__field.is-hidden {
+  display: none;
 }
 
 .pay__field label {
@@ -437,6 +489,7 @@ body {
   gap: 10px;
   font-size: 0.98rem;
   font-weight: 600;
+  margin-top: 4px;
 }
 
 .pay__change strong {

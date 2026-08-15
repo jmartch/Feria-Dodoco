@@ -69,13 +69,30 @@ No requiere servidor ni instalación.
 - Subtotal por producto en tiempo real.
 - Total antes de descuento, descuento aplicado y total final.
 - Descuento del 10% opcional (switch).
-- **Monto recibido y cambio a devolver** (avisa si el pago es insuficiente).
+- **Método de pago:** Efectivo 💵 / QR 📱 / Datáfono 💳.
+- **Monto recibido y cambio a devolver** (solo en efectivo; avisa si el pago es insuficiente).
 - **Registro de ventas del día** guardado en el navegador (`localStorage`):
-  - Botón **Registrar venta** (guarda productos, total, recibido y cambio).
-  - Lista de ventas de hoy con hora, total y detalle.
-  - **Total del día** acumulado.
+  - Botón **Registrar venta** (guarda productos, total, método, recibido y cambio).
+  - Lista de ventas de hoy con hora, total, método y detalle.
+  - **Total del día** acumulado (valor bruto, sin descontar comisiones).
   - Eliminar una venta individual o **vaciar las ventas de hoy**.
   - **Exportar CSV** (se abre en Excel) y **Copiar resumen** de texto.
+
+### 💳 Comisiones por método de pago
+
+El cliente **siempre paga el total completo**, sin importar el método. La comisión
+del medio de pago reduce la ganancia real, y **eso solo se muestra en el Excel**
+(no en la app, para no confundir al vendedor):
+
+| Método    | Comisión |
+| --------- | -------- |
+| Efectivo  | 0%       |
+| QR        | 1,5%     |
+| Datáfono  | 5%       |
+
+Al **Exportar CSV** se agregan las columnas: *Método*, *Comisión %*, *Comisión $*
+y *Neto recibido* (total − comisión), con un resumen del día que incluye el
+**total bruto**, el **total de comisiones** y el **neto** del día.
 - Botón **Limpiar todo** (reinicia cantidades, descuento y pago; no borra ventas).
 - Solo acepta números enteros mayores o iguales a 0.
 - Precios formateados en pesos colombianos con `Intl.NumberFormat`.
