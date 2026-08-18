@@ -1316,6 +1316,7 @@ import { z } from "zod";
 import { autenticar, soloAdmin } from "../src/middlewares/autenticar.js";
 import { validar } from "../src/middlewares/validar.js";
 import { manejarErrores } from "../src/middlewares/manejarErrores.js";
+import { crearLimitador } from "../src/middlewares/limites.js";
 import { firmarAccessToken } from "../src/services/token.service.js";
 
 function appDePrueba() {
@@ -1382,6 +1383,29 @@ describe("middlewares", () => {
     expect(res.status).toBe(400);
     expect(res.body.codigo).toBe("DATOS_INVALIDOS");
     expect(Array.isArray(res.body.detalles)).toBe(true);
+  });
+
+  // Los limitadores de la aplicación se desactivan bajo pruebas, así que aquí se
+  // construye uno propio que anula ese `skip` para comprobar que sí bloquea.
+  it("el limitador responde 429 al superar el límite", async () => {
+    const app = express();
+    app.use(
+      crearLimitador({
+        windowMs: 60_000,
+        limit: 1,
+        skip: () => false,
+        message: { codigo: "DEMASIADAS_PETICIONES", mensaje: "Espera un momento" },
+      }),
+    );
+    app.get("/x", (_req, res) => {
+      res.json({ ok: true });
+    });
+
+    expect((await request(app).get("/x")).status).toBe(200);
+
+    const bloqueada = await request(app).get("/x");
+    expect(bloqueada.status).toBe(429);
+    expect(bloqueada.body.codigo).toBe("DEMASIADAS_PETICIONES");
   });
 });
 ```
@@ -1492,22 +1516,39 @@ export function manejarErrores(
 `Backend/src/middlewares/limites.ts`:
 
 ```ts
-import rateLimit from "express-rate-limit";
+import rateLimit, { type Options } from "express-rate-limit";
 
-export const limiteGeneral = rateLimit({
+const enPruebas = process.env.NODE_ENV === "test";
+
+/**
+ * Fábrica de limitadores.
+ *
+ * Los limitadores montados en la aplicación se desactivan bajo pruebas: su
+ * contador vive en memoria y se comparte entre todos los casos de un mismo
+ * archivo, así que una suite que haga muchas peticiones empezaría a recibir 429
+ * ajenos a lo que está verificando y fallaría por una razón falsa. El
+ * comportamiento del limitador se prueba aparte, con una instancia propia que
+ * anula ese `skip`.
+ */
+export function crearLimitador(opciones: Partial<Options>) {
+  return rateLimit({
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: () => enPruebas,
+    ...opciones,
+  });
+}
+
+export const limiteGeneral = crearLimitador({
   windowMs: 60_000,
   limit: 120,
-  standardHeaders: true,
-  legacyHeaders: false,
   message: { codigo: "DEMASIADAS_PETICIONES", mensaje: "Espera un momento" },
 });
 
 /** Más estricto: frena la fuerza bruta contra el login. */
-export const limiteLogin = rateLimit({
+export const limiteLogin = crearLimitador({
   windowMs: 15 * 60_000,
   limit: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
   message: { codigo: "DEMASIADOS_INTENTOS", mensaje: "Demasiados intentos, espera 15 minutos" },
 });
 ```
