@@ -3,6 +3,7 @@ import { prisma } from "../src/infra/prisma.js";
 import { limpiarBaseDeDatos } from "./helpers/db.js";
 import { authService } from "../src/services/auth.service.js";
 import { verificarPassword } from "../src/services/password.service.js";
+import { emprendimientoRepository } from "../src/repositories/emprendimiento.repository.js";
 
 const datos = {
   nombreEmprendimiento: "Dodoco Store",
@@ -47,12 +48,22 @@ describe("registro de emprendimiento", () => {
     });
   });
 
-  it("no deja el emprendimiento creado si el registro falla", async () => {
+  // Ataca la transacción directamente, sin pasar por el guard de email duplicado
+  // del servicio. Si no lo hiciera, el guard cortaría antes de tocar la base y la
+  // prueba pasaría igual aunque `crearConAdmin` no fuera atómica.
+  it("no deja un emprendimiento huérfano si falla la creación del usuario", async () => {
     await authService.registrar(datos);
+    const antes = await prisma.emprendimiento.count();
 
-    await authService.registrar({ ...datos }).catch(() => undefined);
+    await expect(
+      emprendimientoRepository.crearConAdmin({
+        nombreEmprendimiento: "Otro negocio",
+        email: datos.email, // choca con la restricción única dentro de la transacción
+        passwordHash: "hash-cualquiera",
+        nombreUsuario: "Otra persona",
+      }),
+    ).rejects.toMatchObject({ codigo: "EMAIL_YA_REGISTRADO" });
 
-    const emprendimientos = await prisma.emprendimiento.count();
-    expect(emprendimientos).toBe(1);
+    expect(await prisma.emprendimiento.count()).toBe(antes);
   });
 });
