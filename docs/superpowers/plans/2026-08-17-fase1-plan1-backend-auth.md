@@ -206,7 +206,7 @@ services:
   mysql:
     image: mysql:8
     ports:
-      - "3307:3306"
+      - "3308:3306"
     environment:
       MYSQL_ROOT_PASSWORD: dodoco
       MYSQL_DATABASE: dodoco
@@ -220,7 +220,7 @@ volumes:
 `Backend/.env.example`:
 
 ```
-DATABASE_URL="mysql://root:dodoco@localhost:3307/dodoco"
+DATABASE_URL="mysql://root:dodoco@localhost:3308/dodoco"
 JWT_ACCESS_SECRET="cambiar-en-produccion"
 # Reservado: hoy el refresh token es aleatorio y se guarda hasheado con SHA-256,
 # asi que esta variable aun no se usa. Se deja declarada para no cambiar la
@@ -1849,7 +1849,7 @@ API en Express + Prisma + MySQL.
 ## Desarrollo local
 
 1. `cp .env.example .env`
-2. `docker compose up -d` (levanta MySQL en el puerto 3307)
+2. `docker compose up -d` (levanta MySQL en el puerto 3308)
 3. `npx prisma migrate dev`
 4. `npm run dev`
 
