@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  ADMIN
+  VENDEDOR
+}
+
+model Emprendimiento {
+  id             String    @id
+  nombre         String
+  logo           String?   @db.Text
+  metaPorDefecto Int       @default(1000000)
+  creadoEn       DateTime  @default(now())
+  usuarios       Usuario[]
+}
+
+model Usuario {
+  id               String         @id
+  email            String         @unique
+  passwordHash     String
+  nombre           String
+  rol              Rol            @default(VENDEDOR)
+  emprendimientoId String
+  emprendimiento   Emprendimiento @relation(fields: [emprendimientoId], references: [id], onDelete: Cascade)
+  creadoEn         DateTime       @default(now())
+
+  @@index([emprendimientoId])
+}
