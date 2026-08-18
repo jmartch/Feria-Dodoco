@@ -2,7 +2,10 @@ import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import { prisma } from "../src/infra/prisma.js";
 import { limpiarBaseDeDatos } from "./helpers/db.js";
 import { emprendimientoRepository } from "../src/repositories/emprendimiento.repository.js";
-import { usuarioRepository } from "../src/repositories/usuario.repository.js";
+import {
+  usuarioRepository,
+  type NuevoUsuario,
+} from "../src/repositories/usuario.repository.js";
 
 let empA = "";
 let empB = "";
@@ -61,5 +64,32 @@ describe("aislamiento entre emprendimientos", () => {
 
     expect(usuarios).toHaveLength(1);
     expect(usuarios[0].rol).toBe("ADMIN");
+  });
+
+  it("crear guarda el usuario en el emprendimiento del scope y no deja que un id ajeno sobrescriba el generado", async () => {
+    const idFalso = "id-inventado-por-quien-llama";
+    // Simula datos que llegaran, por ejemplo, de un req.body con un campo
+    // `id` colado: NuevoUsuario no declara `id`, pero como es una variable
+    // (no un literal en la llamada) TypeScript no lo bloquearía si el
+    // repositorio no protegiera el orden del spread.
+    const datosConIdAjeno = {
+      id: idFalso,
+      email: "vendedor@dodoco.co",
+      passwordHash: "hash-v",
+      nombre: "Vendedor Nuevo",
+      rol: "VENDEDOR",
+    } as unknown as NuevoUsuario;
+
+    const creado = await usuarioRepository.crear(
+      { emprendimientoId: empA },
+      datosConIdAjeno,
+    );
+
+    expect(creado.id).not.toBe(idFalso);
+    expect(creado.emprendimientoId).toBe(empA);
+
+    const usuarios = await usuarioRepository.listar({ emprendimientoId: empA });
+    expect(usuarios).toHaveLength(2);
+    expect(usuarios.some((u) => u.email === "vendedor@dodoco.co")).toBe(true);
   });
 });

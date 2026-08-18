@@ -16,8 +16,12 @@ export type UsuarioConHash = UsuarioSeguro & {
   passwordHash: string;
 };
 
+/**
+ * Datos de negocio del usuario. NO incluye `emprendimientoId` a propósito:
+ * ese valor entra por `scope`, que sale del token y nunca del cuerpo de la
+ * petición. Así es imposible crear un usuario dentro de un emprendimiento ajeno.
+ */
 export type NuevoUsuario = {
-  emprendimientoId: string;
   email: string;
   passwordHash: string;
   nombre: string;
@@ -61,9 +65,15 @@ export const usuarioRepository = {
     });
   },
 
-  async crear(datos: NuevoUsuario): Promise<UsuarioSeguro> {
+  async crear(scope: Scope, datos: NuevoUsuario): Promise<UsuarioSeguro> {
     return prisma.usuario.create({
-      data: { id: randomUUID(), ...datos },
+      // El spread va primero y los campos controlados después: así ni el id ni
+      // el emprendimiento pueden ser sobrescritos por quien llama.
+      data: {
+        ...datos,
+        id: randomUUID(),
+        emprendimientoId: scope.emprendimientoId,
+      },
       select: camposSeguros,
     });
   },
