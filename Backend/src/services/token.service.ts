@@ -8,7 +8,27 @@ export type PayloadToken = {
   rol: Rol;
 };
 
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET ?? "secreto-de-desarrollo";
+/**
+ * Falta a propósito un valor por defecto: si el secreto no está configurado, el
+ * arranque debe fallar. Un literal de reserva escrito en el repositorio dejaría
+ * firmar tokens con una clave pública, y cualquiera podría forjarse un `rol:
+ * "ADMIN"` en el emprendimiento que quisiera.
+ *
+ * Se resuelve dentro de una función inmediatamente invocada (en vez de un
+ * `const` + `if` a nivel de módulo) para que TypeScript en modo estricto
+ * infiera el tipo de `ACCESS_SECRET` como `string` y no como `string |
+ * undefined` dentro de las funciones que lo cierran más abajo.
+ */
+const ACCESS_SECRET: string = (() => {
+  const secreto = process.env.JWT_ACCESS_SECRET;
+  if (!secreto) {
+    throw new Error(
+      "Falta la variable de entorno JWT_ACCESS_SECRET. Copia .env.example a .env.",
+    );
+  }
+  return secreto;
+})();
+
 const DURACION_ACCESS = "15m";
 export const DIAS_REFRESH = 30;
 

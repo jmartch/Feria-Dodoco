@@ -12,16 +12,30 @@ export const refreshTokenRepository = {
     });
   },
 
-  async buscarVigente(tokenHash: string) {
+  async buscarVigente(
+    tokenHash: string,
+  ): Promise<{ id: string; usuarioId: string } | null> {
     return prisma.refreshToken.findFirst({
       where: { tokenHash, usadoEn: null, expiraEn: { gt: new Date() } },
+      select: { id: true, usuarioId: true },
     });
   },
 
-  async marcarUsado(id: string): Promise<void> {
-    await prisma.refreshToken.update({
-      where: { id },
+  /**
+   * Marca el token como usado solo si seguía sin usar. Devuelve `true` si esta
+   * llamada fue la que lo consumió.
+   *
+   * Es una comparación y escritura en una sola operación a propósito: con un
+   * `update` incondicional, dos refrescos simultáneos con el mismo token
+   * obtendrían ambos una sesión nueva, que es exactamente lo que la rotación
+   * debe impedir.
+   */
+  async marcarUsado(id: string): Promise<boolean> {
+    const { count } = await prisma.refreshToken.updateMany({
+      where: { id, usadoEn: null },
       data: { usadoEn: new Date() },
     });
+
+    return count === 1;
   },
 };

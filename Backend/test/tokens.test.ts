@@ -44,6 +44,29 @@ describe("login y tokens", () => {
     expect(() => verificarAccessToken("token.falso.aqui")).toThrow();
   });
 
+  it("guarda el refresh token hasheado, nunca en claro", async () => {
+    const sesion = await authService.login(datos.email, datos.password);
+
+    const enClaro = await prisma.refreshToken.findFirst({
+      where: { tokenHash: sesion.refreshToken },
+    });
+
+    expect(enClaro).toBeNull();
+    expect(await prisma.refreshToken.count()).toBe(1);
+  });
+
+  it("dos refrescos simultáneos con el mismo token: solo uno gana", async () => {
+    const sesion = await authService.login(datos.email, datos.password);
+
+    const resultados = await Promise.allSettled([
+      authService.refrescar(sesion.refreshToken),
+      authService.refrescar(sesion.refreshToken),
+    ]);
+
+    const exitosos = resultados.filter((r) => r.status === "fulfilled");
+    expect(exitosos).toHaveLength(1);
+  });
+
   it("al refrescar entrega tokens nuevos e invalida el anterior", async () => {
     const primera = await authService.login(datos.email, datos.password);
     const segunda = await authService.refrescar(primera.refreshToken);

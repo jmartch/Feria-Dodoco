@@ -5,7 +5,11 @@ import {
   usuarioRepository,
   type UsuarioSeguro,
 } from "../repositories/usuario.repository.js";
-import { hashearPassword, verificarPassword } from "./password.service.js";
+import {
+  HASH_SENUELO,
+  hashearPassword,
+  verificarPassword,
+} from "./password.service.js";
 import {
   DIAS_REFRESH,
   firmarAccessToken,
@@ -74,10 +78,17 @@ export const authService = {
     const usuario = await usuarioRepository.buscarPorEmailGlobal(
       email.trim().toLowerCase(),
     );
-    if (!usuario) throw credencialesInvalidas;
 
-    const coincide = await verificarPassword(usuario.passwordHash, password);
-    if (!coincide) throw credencialesInvalidas;
+    // Si el correo no existe se verifica igualmente contra un hash señuelo y se
+    // descarta el resultado. Sin esto, la respuesta sería decenas de veces más
+    // rápida para un correo inexistente y ese tiempo delataría qué correos
+    // están registrados, aunque el mensaje de error sea idéntico.
+    const coincide = await verificarPassword(
+      usuario?.passwordHash ?? HASH_SENUELO,
+      password,
+    );
+
+    if (!usuario || !coincide) throw credencialesInvalidas;
 
     const { passwordHash: _descartado, ...seguro } = usuario;
     return abrirSesion(seguro);
@@ -96,7 +107,15 @@ export const authService = {
       );
     }
 
-    await refreshTokenRepository.marcarUsado(guardado.id);
+    // Si otra petición simultánea lo consumió primero, esta pierde la carrera.
+    const loConsumioEsta = await refreshTokenRepository.marcarUsado(guardado.id);
+    if (!loConsumioEsta) {
+      throw new ErrorDeNegocio(
+        "REFRESH_INVALIDO",
+        "La sesión expiró, vuelve a entrar",
+        401,
+      );
+    }
 
     const usuario = await usuarioRepository.buscarPorIdGlobal(
       guardado.usuarioId,
