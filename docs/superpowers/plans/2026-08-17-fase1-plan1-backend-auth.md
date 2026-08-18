@@ -87,6 +87,9 @@ export default defineConfig({
     include: ["test/**/*.test.ts"],
     fileParallelism: false,
     hookTimeout: 30000,
+    // Carga .env antes de cualquier import: los servicios exigen sus secretos
+    // al evaluarse y deben fallar si faltan, no caer en un valor por defecto.
+    setupFiles: ["dotenv/config"],
   },
 });
 ```
@@ -160,6 +163,8 @@ export function createApp(): Express {
 `Backend/src/server.ts`:
 
 ```ts
+// Debe ir primero: los servicios leen sus secretos al ser evaluados.
+import "dotenv/config";
 import { createApp } from "./app.js";
 
 const puerto = Number(process.env.PORT ?? 3000);
@@ -806,6 +811,7 @@ export class ErrorDeNegocio extends Error {
 `Backend/src/services/password.service.ts`:
 
 ```ts
+import { randomUUID } from "node:crypto";
 import argon2 from "argon2";
 
 export async function hashearPassword(plana: string): Promise<string> {
@@ -822,6 +828,14 @@ export async function verificarPassword(
     return false;
   }
 }
+
+/**
+ * Hash de una contraseña aleatoria que nadie conoce, calculado una sola vez al
+ * arrancar. El login lo usa cuando el correo no existe, para que verificar
+ * siempre cueste lo mismo y el tiempo de respuesta no revele qué correos están
+ * registrados.
+ */
+export const HASH_SENUELO = await hashearPassword(randomUUID());
 ```
 
 `Backend/src/services/auth.service.ts`:
@@ -993,6 +1007,29 @@ describe("login y tokens", () => {
     expect(() => verificarAccessToken("token.falso.aqui")).toThrow();
   });
 
+  it("guarda el refresh token hasheado, nunca en claro", async () => {
+    const sesion = await authService.login(datos.email, datos.password);
+
+    const enClaro = await prisma.refreshToken.findFirst({
+      where: { tokenHash: sesion.refreshToken },
+    });
+
+    expect(enClaro).toBeNull();
+    expect(await prisma.refreshToken.count()).toBe(1);
+  });
+
+  it("dos refrescos simultáneos con el mismo token: solo uno gana", async () => {
+    const sesion = await authService.login(datos.email, datos.password);
+
+    const resultados = await Promise.allSettled([
+      authService.refrescar(sesion.refreshToken),
+      authService.refrescar(sesion.refreshToken),
+    ]);
+
+    const exitosos = resultados.filter((r) => r.status === "fulfilled");
+    expect(exitosos).toHaveLength(1);
+  });
+
   it("al refrescar entrega tokens nuevos e invalida el anterior", async () => {
     const primera = await authService.login(datos.email, datos.password);
     const segunda = await authService.refrescar(primera.refreshToken);
@@ -1030,17 +1067,31 @@ export const refreshTokenRepository = {
     });
   },
 
-  async buscarVigente(tokenHash: string) {
+  async buscarVigente(
+    tokenHash: string,
+  ): Promise<{ id: string; usuarioId: string } | null> {
     return prisma.refreshToken.findFirst({
       where: { tokenHash, usadoEn: null, expiraEn: { gt: new Date() } },
+      select: { id: true, usuarioId: true },
     });
   },
 
-  async marcarUsado(id: string): Promise<void> {
-    await prisma.refreshToken.update({
-      where: { id },
+  /**
+   * Marca el token como usado solo si seguía sin usar. Devuelve `true` si esta
+   * llamada fue la que lo consumió.
+   *
+   * Es una comparación y escritura en una sola operación a propósito: con un
+   * `update` incondicional, dos refrescos simultáneos con el mismo token
+   * obtendrían ambos una sesión nueva, que es exactamente lo que la rotación
+   * debe impedir.
+   */
+  async marcarUsado(id: string): Promise<boolean> {
+    const { count } = await prisma.refreshToken.updateMany({
+      where: { id, usadoEn: null },
       data: { usadoEn: new Date() },
     });
+
+    return count === 1;
   },
 };
 ```
@@ -1058,7 +1109,19 @@ export type PayloadToken = {
   rol: Rol;
 };
 
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET ?? "secreto-de-desarrollo";
+/**
+ * Falta a propósito un valor por defecto: si el secreto no está configurado, el
+ * arranque debe fallar. Un literal de reserva escrito en el repositorio dejaría
+ * firmar tokens con una clave pública, y cualquiera podría forjarse un `rol:
+ * "ADMIN"` en el emprendimiento que quisiera.
+ */
+const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
+if (!ACCESS_SECRET) {
+  throw new Error(
+    "Falta la variable de entorno JWT_ACCESS_SECRET. Copia .env.example a .env.",
+  );
+}
+
 const DURACION_ACCESS = "15m";
 export const DIAS_REFRESH = 30;
 
@@ -1132,10 +1195,17 @@ Y añadir estos dos métodos al objeto `authService`:
     const usuario = await usuarioRepository.buscarPorEmailGlobal(
       email.trim().toLowerCase(),
     );
-    if (!usuario) throw credencialesInvalidas;
 
-    const coincide = await verificarPassword(usuario.passwordHash, password);
-    if (!coincide) throw credencialesInvalidas;
+    // Si el correo no existe se verifica igualmente contra un hash señuelo y se
+    // descarta el resultado. Sin esto, la respuesta sería decenas de veces más
+    // rápida para un correo inexistente y ese tiempo delataría qué correos
+    // están registrados, aunque el mensaje de error sea idéntico.
+    const coincide = await verificarPassword(
+      usuario?.passwordHash ?? HASH_SENUELO,
+      password,
+    );
+
+    if (!usuario || !coincide) throw credencialesInvalidas;
 
     const { passwordHash: _descartado, ...seguro } = usuario;
     return abrirSesion(seguro);
@@ -1154,7 +1224,15 @@ Y añadir estos dos métodos al objeto `authService`:
       );
     }
 
-    await refreshTokenRepository.marcarUsado(guardado.id);
+    // Si otra petición simultánea lo consumió primero, esta pierde la carrera.
+    const loConsumioEsta = await refreshTokenRepository.marcarUsado(guardado.id);
+    if (!loConsumioEsta) {
+      throw new ErrorDeNegocio(
+        "REFRESH_INVALIDO",
+        "La sesión expiró, vuelve a entrar",
+        401,
+      );
+    }
 
     const usuario = await usuarioRepository.buscarPorIdGlobal(
       guardado.usuarioId,
