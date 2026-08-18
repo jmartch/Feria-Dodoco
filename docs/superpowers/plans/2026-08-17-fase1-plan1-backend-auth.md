@@ -1115,12 +1115,18 @@ export type PayloadToken = {
  * firmar tokens con una clave pública, y cualquiera podría forjarse un `rol:
  * "ADMIN"` en el emprendimiento que quisiera.
  */
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
-if (!ACCESS_SECRET) {
-  throw new Error(
-    "Falta la variable de entorno JWT_ACCESS_SECRET. Copia .env.example a .env.",
-  );
-}
+// Se resuelve dentro de una función porque TypeScript no propaga el
+// estrechamiento de un `if` de módulo hacia los closures declarados después:
+// con `const` + `if` sueltos, `jwt.sign` seguiría viendo `string | undefined`.
+const ACCESS_SECRET = ((): string => {
+  const secreto = process.env.JWT_ACCESS_SECRET;
+  if (!secreto) {
+    throw new Error(
+      "Falta la variable de entorno JWT_ACCESS_SECRET. Copia .env.example a .env.",
+    );
+  }
+  return secreto;
+})();
 
 const DURACION_ACCESS = "15m";
 export const DIAS_REFRESH = 30;
