@@ -30,6 +30,19 @@ model Usuario {
   emprendimientoId String
   emprendimiento   Emprendimiento @relation(fields: [emprendimientoId], references: [id], onDelete: Cascade)
   creadoEn         DateTime       @default(now())
+  refreshTokens    RefreshToken[]
 
   @@index([emprendimientoId])
+}
+
+model RefreshToken {
+  id        String    @id
+  tokenHash String    @unique
+  usuarioId String
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usadoEn   DateTime?
+  expiraEn  DateTime
+  creadoEn  DateTime  @default(now())
+
+  @@index([usuarioId])
 }

@@ -65,6 +65,11 @@ export const usuarioRepository = {
     });
   },
 
+  /** Excepción documentada: solo para renovar sesión a partir de un refresh token válido. */
+  async buscarPorIdGlobal(id: string): Promise<UsuarioSeguro | null> {
+    return prisma.usuario.findUnique({ where: { id }, select: camposSeguros });
+  },
+
   async crear(scope: Scope, datos: NuevoUsuario): Promise<UsuarioSeguro> {
     return prisma.usuario.create({
       // El spread va primero y los campos controlados después: así ni el id ni
