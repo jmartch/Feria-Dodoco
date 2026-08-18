@@ -596,16 +596,35 @@ export type Emprendimiento = {
   metaPorDefecto: number;
 };
 
+/**
+ * Traduce el choque de la restricción única de email a un error de dominio.
+ * Vive en el repositorio porque es la capa que conoce los códigos de Prisma:
+ * los servicios no deben saber qué es un "P2002".
+ */
+function esEmailDuplicado(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "P2002"
+  );
+}
+
 export const emprendimientoRepository = {
   /**
    * Crea el emprendimiento y su usuario ADMIN en una sola transacción:
    * nunca debe quedar un emprendimiento sin nadie que pueda entrar.
+   *
+   * Si dos registros simultáneos usan el mismo correo, la transacción perdedora
+   * revierte entera y su error se traduce a `ErrorDeNegocio`, para que el
+   * contrato de errores sea el mismo con o sin concurrencia.
    */
   async crearConAdmin(
     datos: NuevoEmprendimiento,
   ): Promise<{ emprendimientoId: string; usuario: UsuarioSeguro }> {
     const emprendimientoId = randomUUID();
 
+    try {
     const usuario = await prisma.$transaction(async (tx) => {
       await tx.emprendimiento.create({
         data: { id: emprendimientoId, nombre: datos.nombreEmprendimiento },
@@ -631,6 +650,16 @@ export const emprendimientoRepository = {
     });
 
     return { emprendimientoId, usuario };
+    } catch (error) {
+      if (esEmailDuplicado(error)) {
+        throw new ErrorDeNegocio(
+          "EMAIL_YA_REGISTRADO",
+          "Ese correo ya tiene una cuenta",
+          409,
+        );
+      }
+      throw error;
+    }
   },
 
   async buscarPorId(scope: Scope): Promise<Emprendimiento | null> {
@@ -731,13 +760,23 @@ describe("registro de emprendimiento", () => {
     });
   });
 
-  it("no deja el emprendimiento creado si el registro falla", async () => {
+  // Ataca la transacción directamente, sin pasar por el guard de email duplicado
+  // del servicio. Si no lo hiciera, el guard cortaría antes de tocar la base y la
+  // prueba pasaría igual aunque `crearConAdmin` no fuera atómica.
+  it("no deja un emprendimiento huérfano si falla la creación del usuario", async () => {
     await authService.registrar(datos);
+    const antes = await prisma.emprendimiento.count();
 
-    await authService.registrar({ ...datos }).catch(() => undefined);
+    await expect(
+      emprendimientoRepository.crearConAdmin({
+        nombreEmprendimiento: "Otro negocio",
+        email: datos.email, // choca con la restricción única dentro de la transacción
+        passwordHash: "hash-cualquiera",
+        nombreUsuario: "Otra persona",
+      }),
+    ).rejects.toMatchObject({ codigo: "EMAIL_YA_REGISTRADO" });
 
-    const emprendimientos = await prisma.emprendimiento.count();
-    expect(emprendimientos).toBe(1);
+    expect(await prisma.emprendimiento.count()).toBe(antes);
   });
 });
 ```
