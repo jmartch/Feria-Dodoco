@@ -13,7 +13,11 @@
 - Todo el código en **TypeScript estricto** (`strict: true`). Sin `any` implícito.
 - **El dinero se guarda como entero de pesos.** Nunca `Float` ni `Decimal` para montos.
 - **Ningún archivo fuera de `src/repositories/` importa `PrismaClient`.** Los controladores nunca consultan la base de datos.
-- **Toda función de repositorio que lea o escriba datos de un emprendimiento recibe `scope: Scope` como primer parámetro.** Única excepción documentada: `buscarPorEmailGlobal`, necesaria para el login porque en ese momento aún no se sabe a qué emprendimiento pertenece quien entra.
+- **Toda función de repositorio que lea o escriba datos de un emprendimiento recibe `scope: Scope` como primer parámetro.** Existen exactamente **dos excepciones documentadas**, ambas en `usuario.repository.ts`, y ninguna más puede añadirse sin actualizar esta lista:
+  1. `buscarPorEmailGlobal` — para el login: en ese momento aún no se sabe a qué emprendimiento pertenece quien entra.
+  2. `buscarPorIdGlobal` — para renovar la sesión: el refresh token identifica al usuario antes de conocer su emprendimiento.
+
+  Ambas llevan el sufijo `Global` justamente para que salten a la vista en una revisión, y solo el servicio de autenticación puede llamarlas.
 - Contraseñas con **argon2id**. Jamás se registran ni se devuelven contraseñas ni hashes.
 - **Toda entrada validada con Zod** antes de llegar al servicio.
 - Mensajes de error **en español**, sin filtrar detalles internos ni indicar si un email existe.
@@ -218,6 +222,9 @@ volumes:
 ```
 DATABASE_URL="mysql://root:dodoco@localhost:3307/dodoco"
 JWT_ACCESS_SECRET="cambiar-en-produccion"
+# Reservado: hoy el refresh token es aleatorio y se guarda hasheado con SHA-256,
+# asi que esta variable aun no se usa. Se deja declarada para no cambiar la
+# configuracion de Railway cuando se firme el refresh como JWT.
 JWT_REFRESH_SECRET="cambiar-en-produccion-tambien"
 CORS_ORIGIN="http://localhost:5173"
 ```
