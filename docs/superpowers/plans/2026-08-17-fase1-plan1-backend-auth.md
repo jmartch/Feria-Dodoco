@@ -393,7 +393,7 @@ Esta es la tarea que sustituye al RLS. El objetivo del entregable es que sea **i
 - Consumes: `prisma` de `src/infra/prisma.ts`; `limpiarBaseDeDatos()` de `test/helpers/db.ts`.
 - Produces:
   - `type Scope = { emprendimientoId: string }` desde `src/repositories/scope.ts`.
-  - `usuarioRepository` con `listar(scope: Scope): Promise<UsuarioSeguro[]>`, `buscarPorId(scope: Scope, id: string): Promise<UsuarioSeguro | null>`, `buscarPorEmailGlobal(email: string): Promise<UsuarioConHash | null>`, `crear(datos: NuevoUsuario): Promise<UsuarioSeguro>`.
+  - `usuarioRepository` con `listar(scope: Scope): Promise<UsuarioSeguro[]>`, `buscarPorId(scope: Scope, id: string): Promise<UsuarioSeguro | null>`, `buscarPorEmailGlobal(email: string): Promise<UsuarioConHash | null>`, `crear(scope: Scope, datos: NuevoUsuario): Promise<UsuarioSeguro>`.
   - `emprendimientoRepository` con `crearConAdmin(datos: NuevoEmprendimiento): Promise<{ emprendimientoId: string; usuario: UsuarioSeguro }>` y `buscarPorId(scope: Scope): Promise<Emprendimiento | null>`.
   - Tipos `UsuarioSeguro` (sin `passwordHash`) y `UsuarioConHash` (con él), exportados desde `src/repositories/usuario.repository.ts`.
 
@@ -510,8 +510,12 @@ export type UsuarioConHash = UsuarioSeguro & {
   passwordHash: string;
 };
 
+/**
+ * Datos de negocio del usuario. NO incluye `emprendimientoId` a propósito:
+ * ese valor entra por `scope`, que sale del token y nunca del cuerpo de la
+ * petición. Así es imposible crear un usuario dentro de un emprendimiento ajeno.
+ */
 export type NuevoUsuario = {
-  emprendimientoId: string;
   email: string;
   passwordHash: string;
   nombre: string;
@@ -555,9 +559,15 @@ export const usuarioRepository = {
     });
   },
 
-  async crear(datos: NuevoUsuario): Promise<UsuarioSeguro> {
+  async crear(scope: Scope, datos: NuevoUsuario): Promise<UsuarioSeguro> {
     return prisma.usuario.create({
-      data: { id: randomUUID(), ...datos },
+      // El spread va primero y los campos controlados después: así ni el id ni
+      // el emprendimiento pueden ser sobrescritos por quien llama.
+      data: {
+        ...datos,
+        id: randomUUID(),
+        emprendimientoId: scope.emprendimientoId,
+      },
       select: camposSeguros,
     });
   },
