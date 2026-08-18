@@ -25,6 +25,10 @@
 - El backend es **ESM** (`"type": "module"`). Por eso los imports internos llevan extensión
   `.js` aunque el archivo fuente sea `.ts`: lo exige Node en ESM con
   `moduleResolution: "NodeNext"`. No es un error de tipeo.
+- **Prisma queda fijado en la rama 6.x** (`^6.19.3` en `prisma` y `@prisma/client`).
+  Prisma 7 retira `url = env("DATABASE_URL")` dentro de `datasource` y exige
+  `prisma.config.ts` más driver adapters, lo que obligaría a reescribir el esquema y el
+  cliente. No subir a 7.x dentro de este plan: es una migración deliberada, no un bump.
 
 ---
 
