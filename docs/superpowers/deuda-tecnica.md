@@ -70,6 +70,7 @@ claim `tipo: "access"` que `autenticar` exija.
   redespliegue de Railway se cortan las peticiones en vuelo.
 - **`"La sesión expiró"` también para tokens malformados.** Texto impreciso, sin fuga: el
   cliente hace lo mismo en ambos casos.
+- **`agregarCategoriaComoLinea` trae todas las categorías para buscar una.** `evento.service.ts` usa `listarCategorias` + `find` en memoria en vez de una consulta puntual con scope. Con las decenas de categorías de una feria da igual; si un emprendimiento llega a cientos, conviene un `buscarCategoriaPorId(scope, id)` en el repositorio.
 - **`aplicarPreajusteBold` comprueba y luego escribe sin candado.** `metodoPago.service.ts` hace `contar()` y después `crearVarios()`; dos peticiones simultáneas podrían pasar ambas la comprobación y dejar seis métodos. No hay índice único que lo impida. Solo lo alcanza un doble clic o un reintento, y se repara borrando los repetidos, pero un `@@unique([emprendimientoId, nombre])` lo cerraría.
 - **`actualizarCategoria` no es transaccional.** `catalogo.repository.ts` hace `updateMany` y luego `findUniqueOrThrow`; si otro proceso borra la categoría entre ambas, lanza en vez de devolver `null`. Ventana mínima y sin fuga de datos, pero es un 500 evitable.
 - **Indentación del `try/catch`** en `emprendimiento.repository.ts`: el cuerpo no quedó
