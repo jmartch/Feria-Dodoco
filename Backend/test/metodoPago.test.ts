@@ -52,6 +52,34 @@ describe("métodos de pago", () => {
     expect(await metodoPagoRepository.contar({ emprendimientoId: A })).toBe(3);
   });
 
+  // `listar` es lo que alimenta los botones de cobro del vendedor. Sin la columna
+  // `orden` el criterio era `creadoEn`, y `createMany` estampa la misma marca de
+  // tiempo en las tres filas: MySQL devolvía "QR, Datáfono, Efectivo", dejando de
+  // último el método más usado en una feria.
+  it("listar devuelve el preajuste en el orden en que se pidió, no el que decida MySQL", async () => {
+    await metodoPagoService.aplicarPreajusteBold({ emprendimientoId: A });
+
+    const nombres = async () =>
+      (await metodoPagoRepository.listar({ emprendimientoId: A })).map((m) => m.nombre);
+
+    expect(await nombres()).toEqual(["Efectivo", "QR", "Datáfono"]);
+    // Dos lecturas seguidas tienen que dar lo mismo: el orden es del dato, no del
+    // plan de consulta.
+    expect(await nombres()).toEqual(["Efectivo", "QR", "Datáfono"]);
+  });
+
+  it("un método creado después del preajuste queda de último", async () => {
+    await metodoPagoService.aplicarPreajusteBold({ emprendimientoId: A });
+    await metodoPagoRepository.crear(
+      { emprendimientoId: A },
+      { nombre: "Nequi", comisionPct: 0, activo: true },
+    );
+
+    const lista = await metodoPagoRepository.listar({ emprendimientoId: A });
+
+    expect(lista.map((m) => m.nombre)).toEqual(["Efectivo", "QR", "Datáfono", "Nequi"]);
+  });
+
   it("el preajuste de un emprendimiento no aparece en el otro", async () => {
     await metodoPagoService.aplicarPreajusteBold({ emprendimientoId: A });
 

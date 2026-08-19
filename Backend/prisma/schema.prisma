@@ -88,6 +88,11 @@ model MetodoPago {
   nombre           String
   comisionPct      Int
   activo           Boolean  @default(true)
+  // Orden de presentación, fijado por la aplicación. Sin él el orden depende de
+  // `creadoEn`, y `createMany` estampa la misma marca de tiempo en todas las
+  // filas: MySQL devuelve entonces un orden arbitrario y los botones de cobro le
+  // bailarían al vendedor entre pantallas.
+  orden            Int      @default(0)
   emprendimientoId String
   creadoEn         DateTime @default(now())
 

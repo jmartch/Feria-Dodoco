@@ -22,7 +22,8 @@ export const metodoPagoRepository = {
     return prisma.metodoPago.findMany({
       where: { emprendimientoId: scope.emprendimientoId },
       select: campos,
-      orderBy: { creadoEn: "asc" },
+      // `orden` manda; `creadoEn` solo desempata si dos métodos comparten orden.
+      orderBy: [{ orden: "asc" }, { creadoEn: "asc" }],
     });
   },
 
@@ -32,29 +33,37 @@ export const metodoPagoRepository = {
     });
   },
 
+  /** El nuevo método se agrega al final: `orden` es el conteo actual. */
   async crear(scope: Scope, datos: NuevoMetodoPago): Promise<MetodoPago> {
+    const orden = await this.contar(scope);
+
     return prisma.metodoPago.create({
       data: {
         ...datos,
         id: randomUUID(),
+        orden,
         emprendimientoId: scope.emprendimientoId,
       },
       select: campos,
     });
   },
 
+  /** Conserva el orden del arreglo recibido: la posición se guarda en `orden`. */
   async crearVarios(scope: Scope, datos: NuevoMetodoPago[]): Promise<MetodoPago[]> {
-    const filas = datos.map((m) => ({
+    const inicio = await this.contar(scope);
+
+    const filas = datos.map((m, i) => ({
       ...m,
       id: randomUUID(),
+      orden: inicio + i,
       emprendimientoId: scope.emprendimientoId,
     }));
 
     await prisma.metodoPago.createMany({ data: filas });
 
-    // Se devuelven en el orden pedido y no releyendo con `orderBy: creadoEn`:
-    // `createMany` estampa la misma marca de tiempo en todas las filas y el
-    // orden de vuelta sería arbitrario.
+    // Se devuelven en el orden pedido en vez de releer: `createMany` estampa la
+    // misma marca de tiempo en todas las filas, así que una relectura sin `orden`
+    // daría un orden arbitrario.
     return filas.map(({ id, nombre, comisionPct, activo }) => ({
       id,
       nombre,
