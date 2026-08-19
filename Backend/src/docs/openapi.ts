@@ -9,6 +9,16 @@ export const documentoOpenApi = createDocument({
     description:
       "API para registro de ventas en ferias. Todos los montos son enteros de pesos colombianos.",
   },
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+        description: "Token de acceso obtenido en /auth/login.",
+      },
+    },
+  },
   paths: {
     "/auth/registro": {
       post: {
@@ -27,6 +37,7 @@ export const documentoOpenApi = createDocument({
         requestBody: { content: { "application/json": { schema: loginSchema } } },
         responses: {
           "200": { description: "Sesión iniciada" },
+          "400": { description: "Datos inválidos" },
           "401": { description: "Credenciales inválidas" },
         },
       },
@@ -37,6 +48,7 @@ export const documentoOpenApi = createDocument({
         requestBody: { content: { "application/json": { schema: refreshSchema } } },
         responses: {
           "200": { description: "Sesión renovada" },
+          "400": { description: "Datos inválidos" },
           "401": { description: "Refresh token inválido o ya usado" },
         },
       },
@@ -44,9 +56,12 @@ export const documentoOpenApi = createDocument({
     "/auth/yo": {
       get: {
         summary: "Perfil del usuario autenticado",
+        // Sin esto, Swagger no muestra el botón "Authorize" y cualquier
+        // generador de clientes daría el endpoint por público.
+        security: [{ bearerAuth: [] }],
         responses: {
           "200": { description: "Datos del usuario" },
-          "401": { description: "No autenticado" },
+          "401": { description: "No autenticado o sesión expirada" },
         },
       },
     },
