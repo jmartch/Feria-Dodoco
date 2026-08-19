@@ -46,3 +46,135 @@ model RefreshToken {
 
   @@index([usuarioId])
 }
+
+enum OrigenItem {
+  CATEGORIA
+  PRODUCTO
+  MANUAL
+}
+
+enum EstadoEvento {
+  ACTIVO
+  CERRADO
+}
+
+model Categoria {
+  id               String     @id
+  nombre           String
+  precio           Int
+  emprendimientoId String
+  creadaEn         DateTime   @default(now())
+  productos        Producto[]
+
+  @@index([emprendimientoId])
+}
+
+model Producto {
+  id               String    @id
+  nombre           String
+  precioSugerido   Int
+  categoriaId      String
+  categoria        Categoria @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  emprendimientoId String
+  creadoEn         DateTime  @default(now())
+
+  @@index([emprendimientoId])
+  @@index([categoriaId])
+}
+
+model MetodoPago {
+  id               String   @id
+  nombre           String
+  comisionPct      Int
+  activo           Boolean  @default(true)
+  emprendimientoId String
+  creadoEn         DateTime @default(now())
+
+  @@index([emprendimientoId])
+}
+
+model Evento {
+  id                 String       @id
+  nombre             String
+  fechaInicio        DateTime
+  fechaFin           DateTime?
+  meta               Int
+  catalogoBloqueado  Boolean      @default(false)
+  estado             EstadoEvento @default(ACTIVO)
+  emprendimientoId   String
+  creadoEn           DateTime     @default(now())
+  lineas             EventoItem[]
+  descuentos         Descuento[]
+  ventas             Venta[]
+
+  @@index([emprendimientoId])
+}
+
+model EventoItem {
+  id               String     @id
+  nombre           String
+  precio           Int
+  origenTipo       OrigenItem
+  origenId         String?
+  eventoId         String
+  evento           Evento     @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  emprendimientoId String
+  creadoEn         DateTime   @default(now())
+
+  @@index([emprendimientoId])
+  @@index([eventoId])
+}
+
+model Descuento {
+  id               String   @id
+  nombre           String
+  porcentaje       Int
+  activo           Boolean  @default(true)
+  eventoId         String
+  evento           Evento   @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  emprendimientoId String
+  creadoEn         DateTime @default(now())
+
+  @@index([emprendimientoId])
+  @@index([eventoId])
+}
+
+model Venta {
+  id                   String      @id
+  uuid                 String      @unique
+  eventoId             String
+  evento               Evento      @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  usuarioId            String
+  subtotal             Int
+  descuentoNombre      String?
+  descuentoPct         Int         @default(0)
+  descuentoValor       Int         @default(0)
+  total                Int
+  metodoPagoNombre     String
+  comisionPct          Int         @default(0)
+  comisionValor        Int         @default(0)
+  neto                 Int
+  recibido             Int         @default(0)
+  cambio               Int         @default(0)
+  creadaEnDispositivo  DateTime
+  recibidaEnServidor   DateTime    @default(now())
+  emprendimientoId     String
+  items                VentaItem[]
+
+  @@index([emprendimientoId])
+  @@index([eventoId])
+}
+
+model VentaItem {
+  id               String   @id
+  nombre           String
+  precioUnitario   Int
+  cantidad         Int
+  subtotal         Int
+  ventaId          String
+  venta            Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  emprendimientoId String
+
+  @@index([emprendimientoId])
+  @@index([ventaId])
+}
