@@ -20,6 +20,7 @@ La documentación queda en http://localhost:3000/docs
 | Variable | Descripción |
 |---|---|
 | `DATABASE_URL` | Cadena de conexión de MySQL |
-| `JWT_ACCESS_SECRET` | Secreto del token de acceso |
-| `JWT_REFRESH_SECRET` | Secreto reservado para el refresh |
+| `JWT_ACCESS_SECRET` | Secreto del token de acceso. Sin él la API **no arranca**, a propósito |
+| `JWT_REFRESH_SECRET` | Reservada: hoy el refresh se guarda hasheado y no se firma |
 | `CORS_ORIGIN` | URL del frontend en Vercel |
+| `PORT` | La inyecta Railway automáticamente; en local se usa 3000 |
