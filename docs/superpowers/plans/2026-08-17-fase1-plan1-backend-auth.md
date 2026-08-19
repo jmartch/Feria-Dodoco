@@ -1991,21 +1991,34 @@ git commit -m "docs(backend): documentacion OpenAPI con Swagger UI"
 `Backend/test/produccion.test.ts`:
 
 ```ts
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { readFileSync } from "node:fs";
 
 const paquete = JSON.parse(readFileSync("package.json", "utf8"));
 
 describe("configuración de producción", () => {
-  it("define el comando de arranque que aplica migraciones", () => {
-    expect(paquete.scripts["start:prod"]).toContain("prisma migrate deploy");
-    expect(paquete.scripts["start:prod"]).toContain("node dist/server.js");
+  // Comprueba el ORDEN, no solo la presencia: arrancar el servidor antes de
+  // aplicar las migraciones dejaría la API sirviendo contra un esquema viejo.
+  it("aplica las migraciones antes de arrancar el servidor", () => {
+    expect(paquete.scripts["start:prod"]).toMatch(
+      /prisma migrate deploy\s*&&\s*node dist\/server\.js/,
+    );
   });
 
-  it("no expone secretos por defecto en el código", () => {
-    const tokenService = readFileSync("src/services/token.service.ts", "utf8");
+  // Prueba de comportamiento, no de texto: sin el secreto, importar el módulo
+  // debe fallar. Una versión que buscara la cadena "process.env.JWT_ACCESS_SECRET"
+  // en el archivo seguiría pasando aunque alguien reintrodujera un valor de
+  // reserva al lado, que es justo la regresión que hay que impedir.
+  it("falla al arrancar si falta el secreto de firma, en vez de usar uno por defecto", async () => {
+    vi.resetModules();
+    vi.stubEnv("JWT_ACCESS_SECRET", "");
 
-    expect(tokenService).toContain("process.env.JWT_ACCESS_SECRET");
+    await expect(
+      import("../src/services/token.service.js"),
+    ).rejects.toThrow(/JWT_ACCESS_SECRET/);
+
+    vi.unstubAllEnvs();
+    vi.resetModules();
   });
 });
 ```
@@ -2068,9 +2081,10 @@ La documentación queda en http://localhost:3000/docs
 | Variable | Descripción |
 |---|---|
 | `DATABASE_URL` | Cadena de conexión de MySQL |
-| `JWT_ACCESS_SECRET` | Secreto del token de acceso |
-| `JWT_REFRESH_SECRET` | Secreto reservado para el refresh |
+| `JWT_ACCESS_SECRET` | Secreto del token de acceso. Sin él la API **no arranca**, a propósito |
+| `JWT_REFRESH_SECRET` | Reservada: hoy el refresh se guarda hasheado y no se firma |
 | `CORS_ORIGIN` | URL del frontend en Vercel |
+| `PORT` | La inyecta Railway automáticamente; en local se usa 3000 |
 ```
 
 - [ ] **Step 4: Ejecutar toda la suite y la verificación de tipos**
