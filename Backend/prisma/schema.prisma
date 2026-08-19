@@ -31,6 +31,7 @@ model Usuario {
   emprendimiento   Emprendimiento @relation(fields: [emprendimientoId], references: [id], onDelete: Cascade)
   creadoEn         DateTime       @default(now())
   refreshTokens    RefreshToken[]
+  ventas           Venta[]
 
   @@index([emprendimientoId])
 }
@@ -145,6 +146,11 @@ model Venta {
   eventoId             String
   evento               Evento      @relation(fields: [eventoId], references: [id], onDelete: Cascade)
   usuarioId            String
+  // `Restrict` a propósito: la venta es el registro contable de la feria. Si se
+  // pudiera borrar a quien la registró, quedarían ventas apuntando a un usuario
+  // inexistente y sin ningún error que lo avise. Con esta restricción, borrar un
+  // vendedor con ventas falla de forma explícita, que es lo correcto.
+  usuario              Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
   subtotal             Int
   descuentoNombre      String?
   descuentoPct         Int         @default(0)
@@ -163,6 +169,7 @@ model Venta {
 
   @@index([emprendimientoId])
   @@index([eventoId])
+  @@index([usuarioId])
 }
 
 model VentaItem {
