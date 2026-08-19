@@ -119,7 +119,11 @@ export const eventoRepository = {
     return prisma.eventoItem.findMany({
       where: { eventoId, emprendimientoId: scope.emprendimientoId },
       select: camposLinea,
-      orderBy: { creadoEn: "asc" },
+      // `id` desempata para que dos lecturas seguidas den siempre lo mismo:
+      // `creadoEn` es DATETIME(3) y dos altas en el mismo milisegundo dejarían el
+      // orden a criterio de MySQL, con los botones del vendedor bailando entre
+      // pantallas. El desempate es arbitrario pero estable, que es lo que importa.
+      orderBy: [{ creadoEn: "asc" }, { id: "asc" }],
     });
   },
 
@@ -152,7 +156,8 @@ export const eventoRepository = {
     return prisma.descuento.findMany({
       where: { eventoId, emprendimientoId: scope.emprendimientoId },
       select: camposDescuento,
-      orderBy: { creadoEn: "asc" },
+      // Mismo desempate estable que en `listarLineas`.
+      orderBy: [{ creadoEn: "asc" }, { id: "asc" }],
     });
   },
 

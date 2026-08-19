@@ -38,6 +38,10 @@ export const eventoService = {
    * Trae una categoría completa como UNA sola línea. Copia nombre y precio en
    * ese momento: si mañana cambia el precio de la categoría, lo vendido en esta
    * feria sigue diciendo la verdad.
+   *
+   * Si la categoría ya está en el evento devuelve la línea existente en vez de
+   * duplicarla: dos botones idénticos en la pantalla de venta solo confunden al
+   * vendedor, y quien quiera esa categoría a otro precio usa una línea manual.
    */
   async agregarCategoriaComoLinea(
     scope: Scope,
@@ -56,6 +60,13 @@ export const eventoService = {
         404,
       );
     }
+
+    const lineas = await eventoRepository.listarLineas(scope, eventoId);
+    const yaEsta = lineas.find(
+      (l) => l.origenTipo === "CATEGORIA" && l.origenId === categoria.id,
+    );
+
+    if (yaEsta) return yaEsta;
 
     return eventoRepository.crearLinea(scope, eventoId, {
       nombre: categoria.nombre,

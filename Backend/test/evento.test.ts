@@ -48,6 +48,48 @@ describe("eventos y líneas", () => {
     expect(lineas).toHaveLength(1);
   });
 
+  // Un doble toque al armar la feria dejaría dos botones idénticos en la pantalla
+  // de venta. La segunda llamada devuelve la línea que ya existe.
+  it("traer dos veces la misma categoría no duplica la línea", async () => {
+    const evento = await crearEvento(A);
+    const categoria = await catalogoRepository.crearCategoria(scopeA, {
+      nombre: "Medias",
+      precio: 15000,
+    });
+
+    const primera = await eventoService.agregarCategoriaComoLinea(scopeA, evento.id, categoria.id);
+    const segunda = await eventoService.agregarCategoriaComoLinea(scopeA, evento.id, categoria.id);
+
+    expect(segunda.id).toBe(primera.id);
+    expect(await eventoRepository.listarLineas(scopeA, evento.id)).toHaveLength(1);
+  });
+
+  // Una línea manual sí puede repetir nombre: es la salida para quien vende la
+  // misma categoría a otro precio.
+  it("las líneas manuales no se deduplican", async () => {
+    const evento = await crearEvento(A);
+
+    await eventoService.agregarLineaManual(scopeA, evento.id, { nombre: "Combo", precio: 20000 });
+    await eventoService.agregarLineaManual(scopeA, evento.id, { nombre: "Combo", precio: 25000 });
+
+    expect(await eventoRepository.listarLineas(scopeA, evento.id)).toHaveLength(2);
+  });
+
+  it("el orden de las líneas es el mismo en dos lecturas seguidas", async () => {
+    const evento = await crearEvento(A);
+    const nombres = ["Pines", "Llaveros", "Diademas", "Stickers", "Bolsos", "Aretes"];
+
+    for (const nombre of nombres) {
+      await eventoService.agregarLineaManual(scopeA, evento.id, { nombre, precio: 10000 });
+    }
+
+    const primera = await eventoRepository.listarLineas(scopeA, evento.id);
+    const segunda = await eventoRepository.listarLineas(scopeA, evento.id);
+
+    expect(segunda.map((l) => l.id)).toEqual(primera.map((l) => l.id));
+    expect(primera.map((l) => l.nombre)).toEqual(nombres);
+  });
+
   it("la línea conserva el precio aunque después cambie el de la categoría", async () => {
     const evento = await crearEvento(A);
     const categoria = await catalogoRepository.crearCategoria(scopeA, {
