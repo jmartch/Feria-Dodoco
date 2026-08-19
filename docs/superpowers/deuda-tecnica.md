@@ -70,6 +70,7 @@ claim `tipo: "access"` que `autenticar` exija.
   redespliegue de Railway se cortan las peticiones en vuelo.
 - **`"La sesión expiró"` también para tokens malformados.** Texto impreciso, sin fuga: el
   cliente hace lo mismo en ambos casos.
+- **`actualizarCategoria` no es transaccional.** `catalogo.repository.ts` hace `updateMany` y luego `findUniqueOrThrow`; si otro proceso borra la categoría entre ambas, lanza en vez de devolver `null`. Ventana mínima y sin fuga de datos, pero es un 500 evitable.
 - **Indentación del `try/catch`** en `emprendimiento.repository.ts`: el cuerpo no quedó
   sangrado dentro del `try`. Cosmético, lo arreglará un formateador cuando se añada uno.
 
