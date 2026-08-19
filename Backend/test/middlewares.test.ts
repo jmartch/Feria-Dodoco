@@ -7,6 +7,7 @@ import { validar } from "../src/middlewares/validar.js";
 import { manejarErrores } from "../src/middlewares/manejarErrores.js";
 import { crearLimitador } from "../src/middlewares/limites.js";
 import { firmarAccessToken } from "../src/services/token.service.js";
+import { createApp } from "../src/app.js";
 
 function appDePrueba() {
   const app = express();
@@ -95,5 +96,23 @@ describe("middlewares", () => {
     const bloqueada = await request(app).get("/x");
     expect(bloqueada.status).toBe(429);
     expect(bloqueada.body.codigo).toBe("DEMASIADAS_PETICIONES");
+  });
+
+  it("un JSON malformado devuelve 400 con JSON_INVALIDO", async () => {
+    const res = await request(createApp())
+      .post("/auth/login")
+      .set("Content-Type", "application/json")
+      .send("{ esto no es json");
+
+    expect(res.status).toBe(400);
+    expect(res.body.codigo).toBe("JSON_INVALIDO");
+  });
+
+  it("una ruta inexistente devuelve 404 RUTA_NO_ENCONTRADA en JSON", async () => {
+    const res = await request(createApp()).get("/no-existe");
+
+    expect(res.status).toBe(404);
+    expect(res.body.codigo).toBe("RUTA_NO_ENCONTRADA");
+    expect(res.headers["content-type"]).toMatch(/json/);
   });
 });

@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { authService } from "../services/auth.service.js";
 import { usuarioRepository } from "../repositories/usuario.repository.js";
+import { ErrorDeNegocio } from "../errors.js";
 
 export const authController = {
   async registrar(req: Request, res: Response, next: NextFunction) {
@@ -36,6 +37,15 @@ export const authController = {
         { emprendimientoId: req.auth!.emprendimientoId },
         req.auth!.usuarioId,
       );
+
+      if (!usuario) {
+        throw new ErrorDeNegocio(
+          "SESION_INVALIDA",
+          "La sesión ya no es válida, vuelve a entrar",
+          401,
+        );
+      }
+
       res.json(usuario);
     } catch (error) {
       next(error);

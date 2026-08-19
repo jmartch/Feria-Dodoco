@@ -70,4 +70,68 @@ describe("rutas de autenticación", () => {
 
     expect(res.status).toBe(401);
   });
+
+  it("el token de un emprendimiento nunca expone datos de otro en /auth/yo", async () => {
+    const cuerpoA = {
+      nombreEmprendimiento: "Dodoco Store",
+      email: "a@dodoco.co",
+      password: "clave-segura-123",
+      nombreUsuario: "Ana",
+    };
+    const cuerpoB = {
+      nombreEmprendimiento: "Medias Pao",
+      email: "b@medias.co",
+      password: "clave-segura-456",
+      nombreUsuario: "Beto",
+    };
+
+    await request(app).post("/auth/registro").send(cuerpoA);
+    await request(app).post("/auth/registro").send(cuerpoB);
+
+    const loginA = await request(app)
+      .post("/auth/login")
+      .send({ email: cuerpoA.email, password: cuerpoA.password });
+    const loginB = await request(app)
+      .post("/auth/login")
+      .send({ email: cuerpoB.email, password: cuerpoB.password });
+
+    expect(loginA.status).toBe(200);
+    expect(loginB.status).toBe(200);
+    expect(loginA.body.usuario.emprendimientoId).not.toBe(
+      loginB.body.usuario.emprendimientoId,
+    );
+
+    const yoA = await request(app)
+      .get("/auth/yo")
+      .set("Authorization", `Bearer ${loginA.body.accessToken}`);
+
+    expect(yoA.status).toBe(200);
+    expect(yoA.body.email).toBe(cuerpoA.email);
+    expect(yoA.body.emprendimientoId).toBe(loginA.body.usuario.emprendimientoId);
+    expect(yoA.body.email).not.toBe(cuerpoB.email);
+    expect(yoA.body.emprendimientoId).not.toBe(loginB.body.usuario.emprendimientoId);
+  });
+
+  it("POST /auth/refresh entrega un access token nuevo", async () => {
+    await request(app).post("/auth/registro").send(cuerpoRegistro);
+
+    const login = await request(app)
+      .post("/auth/login")
+      .send({ email: cuerpoRegistro.email, password: cuerpoRegistro.password });
+
+    const refresh = await request(app)
+      .post("/auth/refresh")
+      .send({ refreshToken: login.body.refreshToken });
+
+    expect(refresh.status).toBe(200);
+    expect(refresh.body.accessToken).toBeTruthy();
+    expect(refresh.body.refreshToken).not.toBe(login.body.refreshToken);
+  });
+
+  it("POST /auth/refresh sin cuerpo devuelve 400 DATOS_INVALIDOS", async () => {
+    const res = await request(app).post("/auth/refresh").send();
+
+    expect(res.status).toBe(400);
+    expect(res.body.codigo).toBe("DATOS_INVALIDOS");
+  });
 });

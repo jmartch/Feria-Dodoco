@@ -24,3 +24,5 @@ La documentación queda en http://localhost:3000/docs
 | `JWT_REFRESH_SECRET` | Reservada: hoy el refresh se guarda hasheado y no se firma |
 | `CORS_ORIGIN` | URL del frontend en Vercel |
 | `PORT` | La inyecta Railway automáticamente; en local se usa 3000 |
+
+> **Root Directory:** `railway.json` vive en `Backend/`, no en la raíz del repositorio. El servicio en Railway debe configurarse con **Root Directory = `Backend`**, o no encontrará este archivo ni el resto del proyecto.
