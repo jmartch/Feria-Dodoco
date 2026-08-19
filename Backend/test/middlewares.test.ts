@@ -5,6 +5,7 @@ import { z } from "zod";
 import { autenticar, soloAdmin } from "../src/middlewares/autenticar.js";
 import { validar } from "../src/middlewares/validar.js";
 import { manejarErrores } from "../src/middlewares/manejarErrores.js";
+import { crearLimitador } from "../src/middlewares/limites.js";
 import { firmarAccessToken } from "../src/services/token.service.js";
 
 function appDePrueba() {
@@ -71,5 +72,28 @@ describe("middlewares", () => {
     expect(res.status).toBe(400);
     expect(res.body.codigo).toBe("DATOS_INVALIDOS");
     expect(Array.isArray(res.body.detalles)).toBe(true);
+  });
+
+  // Los limitadores de la aplicación se desactivan bajo pruebas, así que aquí se
+  // construye uno propio que anula ese `skip` para comprobar que sí bloquea.
+  it("el limitador responde 429 al superar el límite", async () => {
+    const app = express();
+    app.use(
+      crearLimitador({
+        windowMs: 60_000,
+        limit: 1,
+        skip: () => false,
+        message: { codigo: "DEMASIADAS_PETICIONES", mensaje: "Espera un momento" },
+      }),
+    );
+    app.get("/x", (_req, res) => {
+      res.json({ ok: true });
+    });
+
+    expect((await request(app).get("/x")).status).toBe(200);
+
+    const bloqueada = await request(app).get("/x");
+    expect(bloqueada.status).toBe(429);
+    expect(bloqueada.body.codigo).toBe("DEMASIADAS_PETICIONES");
   });
 });
