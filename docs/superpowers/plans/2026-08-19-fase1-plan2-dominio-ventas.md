@@ -175,7 +175,24 @@ model VentaItem {
 }
 ```
 
-Nota sobre los porcentajes: `comisionPct`, `descuentoPct` y `porcentaje` se guardan como **enteros en puntos básicos** (centésimas de porcentaje), no como decimales. El 1,5 % de Bold es `150`; el 5 % del datáfono es `500`; el 10 % de descuento es `1000`. Así el esquema respeta la regla de que nunca hay flotantes, y la conversión vive en un solo sitio (Task 5).
+Nota sobre los porcentajes: `comisionPct`, `descuentoPct` y `porcentaje` se guardan como
+**enteros en puntos básicos** (centésimas de porcentaje). El 1,5 % de Bold es `150`; el 5 %
+del datáfono es `500`; el 10 % de descuento es `1000`.
+
+Dos razones, y conviene no exagerar la primera:
+
+1. **Algunos porcentajes no son representables en binario y desvían el redondeo.** Con las
+   tarifas de Bold (1,5 % y 5 %) esto no ocurre nunca: se comprobó sobre dos millones de
+   totales, sin una sola discrepancia. Pero con 2,9 % —tarifa de tarjeta muy común— sí:
+   `500 × 0,029` da `14,499999999999998` y redondea a 14, mientras que `500 × 290 ÷ 10000`
+   da `14,5` exacto y redondea a 15. Un peso de diferencia. Como el sistema permite que
+   **cada emprendimiento configure su propia comisión**, esas tarifas van a aparecer.
+2. **La columna queda entera.** Guardar `1.5` obligaría a una columna decimal o flotante y
+   abriría una excepción a la regla de que todo el dinero del sistema es entero. Con
+   puntos básicos no hay excepción que recordar.
+
+Costo aceptado: la interfaz debe traducir entre lo que escribe la persona (`1,5`) y lo que
+se guarda (`150`).
 
 - [ ] **Step 2: Crear la migración**
 
