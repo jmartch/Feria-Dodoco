@@ -1,9 +1,11 @@
 import express, { type Express } from "express";
 import helmet from "helmet";
 import cors from "cors";
+import swaggerUi from "swagger-ui-express";
 import { limiteGeneral } from "./middlewares/limites.js";
 import { manejarErrores } from "./middlewares/manejarErrores.js";
 import { authRoutes } from "./routes/auth.routes.js";
+import { documentoOpenApi } from "./docs/openapi.js";
 
 export function createApp(): Express {
   const app = express();
@@ -18,6 +20,11 @@ export function createApp(): Express {
   });
 
   app.use("/auth", authRoutes);
+
+  app.get("/docs.json", (_req, res) => {
+    res.json(documentoOpenApi);
+  });
+  app.use("/docs", swaggerUi.serve, swaggerUi.setup(documentoOpenApi));
 
   app.use(manejarErrores);
   return app;
