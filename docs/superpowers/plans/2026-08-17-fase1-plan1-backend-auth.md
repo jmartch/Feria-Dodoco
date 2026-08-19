@@ -13,7 +13,11 @@
 - Todo el código en **TypeScript estricto** (`strict: true`). Sin `any` implícito.
 - **El dinero se guarda como entero de pesos.** Nunca `Float` ni `Decimal` para montos.
 - **Ningún archivo fuera de `src/repositories/` importa `PrismaClient`.** Los controladores nunca consultan la base de datos.
-- **Toda función de repositorio que lea o escriba datos de un emprendimiento recibe `scope: Scope` como primer parámetro.** Única excepción documentada: `buscarPorEmailGlobal`, necesaria para el login porque en ese momento aún no se sabe a qué emprendimiento pertenece quien entra.
+- **Toda función de repositorio que lea o escriba datos de un emprendimiento recibe `scope: Scope` como primer parámetro.** Existen exactamente **dos excepciones documentadas**, ambas en `usuario.repository.ts`, y ninguna más puede añadirse sin actualizar esta lista:
+  1. `buscarPorEmailGlobal` — para el login: en ese momento aún no se sabe a qué emprendimiento pertenece quien entra.
+  2. `buscarPorIdGlobal` — para renovar la sesión: el refresh token identifica al usuario antes de conocer su emprendimiento.
+
+  Ambas llevan el sufijo `Global` justamente para que salten a la vista en una revisión, y solo el servicio de autenticación puede llamarlas.
 - Contraseñas con **argon2id**. Jamás se registran ni se devuelven contraseñas ni hashes.
 - **Toda entrada validada con Zod** antes de llegar al servicio.
 - Mensajes de error **en español**, sin filtrar detalles internos ni indicar si un email existe.
@@ -21,6 +25,10 @@
 - El backend es **ESM** (`"type": "module"`). Por eso los imports internos llevan extensión
   `.js` aunque el archivo fuente sea `.ts`: lo exige Node en ESM con
   `moduleResolution: "NodeNext"`. No es un error de tipeo.
+- **Prisma queda fijado en la rama 6.x** (`^6.19.3` en `prisma` y `@prisma/client`).
+  Prisma 7 retira `url = env("DATABASE_URL")` dentro de `datasource` y exige
+  `prisma.config.ts` más driver adapters, lo que obligaría a reescribir el esquema y el
+  cliente. No subir a 7.x dentro de este plan: es una migración deliberada, no un bump.
 
 ---
 
@@ -79,6 +87,9 @@ export default defineConfig({
     include: ["test/**/*.test.ts"],
     fileParallelism: false,
     hookTimeout: 30000,
+    // Carga .env antes de cualquier import: los servicios exigen sus secretos
+    // al evaluarse y deben fallar si faltan, no caer en un valor por defecto.
+    setupFiles: ["dotenv/config"],
   },
 });
 ```
@@ -152,6 +163,8 @@ export function createApp(): Express {
 `Backend/src/server.ts`:
 
 ```ts
+// Debe ir primero: los servicios leen sus secretos al ser evaluados.
+import "dotenv/config";
 import { createApp } from "./app.js";
 
 const puerto = Number(process.env.PORT ?? 3000);
@@ -202,7 +215,7 @@ services:
   mysql:
     image: mysql:8
     ports:
-      - "3307:3306"
+      - "3308:3306"
     environment:
       MYSQL_ROOT_PASSWORD: dodoco
       MYSQL_DATABASE: dodoco
@@ -216,8 +229,11 @@ volumes:
 `Backend/.env.example`:
 
 ```
-DATABASE_URL="mysql://root:dodoco@localhost:3307/dodoco"
+DATABASE_URL="mysql://root:dodoco@localhost:3308/dodoco"
 JWT_ACCESS_SECRET="cambiar-en-produccion"
+# Reservado: hoy el refresh token es aleatorio y se guarda hasheado con SHA-256,
+# asi que esta variable aun no se usa. Se deja declarada para no cambiar la
+# configuracion de Railway cuando se firme el refresh como JWT.
 JWT_REFRESH_SECRET="cambiar-en-produccion-tambien"
 CORS_ORIGIN="http://localhost:5173"
 ```
@@ -382,7 +398,7 @@ Esta es la tarea que sustituye al RLS. El objetivo del entregable es que sea **i
 - Consumes: `prisma` de `src/infra/prisma.ts`; `limpiarBaseDeDatos()` de `test/helpers/db.ts`.
 - Produces:
   - `type Scope = { emprendimientoId: string }` desde `src/repositories/scope.ts`.
-  - `usuarioRepository` con `listar(scope: Scope): Promise<UsuarioSeguro[]>`, `buscarPorId(scope: Scope, id: string): Promise<UsuarioSeguro | null>`, `buscarPorEmailGlobal(email: string): Promise<UsuarioConHash | null>`, `crear(datos: NuevoUsuario): Promise<UsuarioSeguro>`.
+  - `usuarioRepository` con `listar(scope: Scope): Promise<UsuarioSeguro[]>`, `buscarPorId(scope: Scope, id: string): Promise<UsuarioSeguro | null>`, `buscarPorEmailGlobal(email: string): Promise<UsuarioConHash | null>`, `crear(scope: Scope, datos: NuevoUsuario): Promise<UsuarioSeguro>`.
   - `emprendimientoRepository` con `crearConAdmin(datos: NuevoEmprendimiento): Promise<{ emprendimientoId: string; usuario: UsuarioSeguro }>` y `buscarPorId(scope: Scope): Promise<Emprendimiento | null>`.
   - Tipos `UsuarioSeguro` (sin `passwordHash`) y `UsuarioConHash` (con él), exportados desde `src/repositories/usuario.repository.ts`.
 
@@ -499,8 +515,12 @@ export type UsuarioConHash = UsuarioSeguro & {
   passwordHash: string;
 };
 
+/**
+ * Datos de negocio del usuario. NO incluye `emprendimientoId` a propósito:
+ * ese valor entra por `scope`, que sale del token y nunca del cuerpo de la
+ * petición. Así es imposible crear un usuario dentro de un emprendimiento ajeno.
+ */
 export type NuevoUsuario = {
-  emprendimientoId: string;
   email: string;
   passwordHash: string;
   nombre: string;
@@ -544,9 +564,15 @@ export const usuarioRepository = {
     });
   },
 
-  async crear(datos: NuevoUsuario): Promise<UsuarioSeguro> {
+  async crear(scope: Scope, datos: NuevoUsuario): Promise<UsuarioSeguro> {
     return prisma.usuario.create({
-      data: { id: randomUUID(), ...datos },
+      // El spread va primero y los campos controlados después: así ni el id ni
+      // el emprendimiento pueden ser sobrescritos por quien llama.
+      data: {
+        ...datos,
+        id: randomUUID(),
+        emprendimientoId: scope.emprendimientoId,
+      },
       select: camposSeguros,
     });
   },
@@ -575,16 +601,35 @@ export type Emprendimiento = {
   metaPorDefecto: number;
 };
 
+/**
+ * Traduce el choque de la restricción única de email a un error de dominio.
+ * Vive en el repositorio porque es la capa que conoce los códigos de Prisma:
+ * los servicios no deben saber qué es un "P2002".
+ */
+function esEmailDuplicado(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "P2002"
+  );
+}
+
 export const emprendimientoRepository = {
   /**
    * Crea el emprendimiento y su usuario ADMIN en una sola transacción:
    * nunca debe quedar un emprendimiento sin nadie que pueda entrar.
+   *
+   * Si dos registros simultáneos usan el mismo correo, la transacción perdedora
+   * revierte entera y su error se traduce a `ErrorDeNegocio`, para que el
+   * contrato de errores sea el mismo con o sin concurrencia.
    */
   async crearConAdmin(
     datos: NuevoEmprendimiento,
   ): Promise<{ emprendimientoId: string; usuario: UsuarioSeguro }> {
     const emprendimientoId = randomUUID();
 
+    try {
     const usuario = await prisma.$transaction(async (tx) => {
       await tx.emprendimiento.create({
         data: { id: emprendimientoId, nombre: datos.nombreEmprendimiento },
@@ -610,6 +655,16 @@ export const emprendimientoRepository = {
     });
 
     return { emprendimientoId, usuario };
+    } catch (error) {
+      if (esEmailDuplicado(error)) {
+        throw new ErrorDeNegocio(
+          "EMAIL_YA_REGISTRADO",
+          "Ese correo ya tiene una cuenta",
+          409,
+        );
+      }
+      throw error;
+    }
   },
 
   async buscarPorId(scope: Scope): Promise<Emprendimiento | null> {
@@ -710,13 +765,23 @@ describe("registro de emprendimiento", () => {
     });
   });
 
-  it("no deja el emprendimiento creado si el registro falla", async () => {
+  // Ataca la transacción directamente, sin pasar por el guard de email duplicado
+  // del servicio. Si no lo hiciera, el guard cortaría antes de tocar la base y la
+  // prueba pasaría igual aunque `crearConAdmin` no fuera atómica.
+  it("no deja un emprendimiento huérfano si falla la creación del usuario", async () => {
     await authService.registrar(datos);
+    const antes = await prisma.emprendimiento.count();
 
-    await authService.registrar({ ...datos }).catch(() => undefined);
+    await expect(
+      emprendimientoRepository.crearConAdmin({
+        nombreEmprendimiento: "Otro negocio",
+        email: datos.email, // choca con la restricción única dentro de la transacción
+        passwordHash: "hash-cualquiera",
+        nombreUsuario: "Otra persona",
+      }),
+    ).rejects.toMatchObject({ codigo: "EMAIL_YA_REGISTRADO" });
 
-    const emprendimientos = await prisma.emprendimiento.count();
-    expect(emprendimientos).toBe(1);
+    expect(await prisma.emprendimiento.count()).toBe(antes);
   });
 });
 ```
@@ -746,6 +811,7 @@ export class ErrorDeNegocio extends Error {
 `Backend/src/services/password.service.ts`:
 
 ```ts
+import { randomUUID } from "node:crypto";
 import argon2 from "argon2";
 
 export async function hashearPassword(plana: string): Promise<string> {
@@ -762,6 +828,14 @@ export async function verificarPassword(
     return false;
   }
 }
+
+/**
+ * Hash de una contraseña aleatoria que nadie conoce, calculado una sola vez al
+ * arrancar. El login lo usa cuando el correo no existe, para que verificar
+ * siempre cueste lo mismo y el tiempo de respuesta no revele qué correos están
+ * registrados.
+ */
+export const HASH_SENUELO = await hashearPassword(randomUUID());
 ```
 
 `Backend/src/services/auth.service.ts`:
@@ -933,6 +1007,29 @@ describe("login y tokens", () => {
     expect(() => verificarAccessToken("token.falso.aqui")).toThrow();
   });
 
+  it("guarda el refresh token hasheado, nunca en claro", async () => {
+    const sesion = await authService.login(datos.email, datos.password);
+
+    const enClaro = await prisma.refreshToken.findFirst({
+      where: { tokenHash: sesion.refreshToken },
+    });
+
+    expect(enClaro).toBeNull();
+    expect(await prisma.refreshToken.count()).toBe(1);
+  });
+
+  it("dos refrescos simultáneos con el mismo token: solo uno gana", async () => {
+    const sesion = await authService.login(datos.email, datos.password);
+
+    const resultados = await Promise.allSettled([
+      authService.refrescar(sesion.refreshToken),
+      authService.refrescar(sesion.refreshToken),
+    ]);
+
+    const exitosos = resultados.filter((r) => r.status === "fulfilled");
+    expect(exitosos).toHaveLength(1);
+  });
+
   it("al refrescar entrega tokens nuevos e invalida el anterior", async () => {
     const primera = await authService.login(datos.email, datos.password);
     const segunda = await authService.refrescar(primera.refreshToken);
@@ -970,17 +1067,31 @@ export const refreshTokenRepository = {
     });
   },
 
-  async buscarVigente(tokenHash: string) {
+  async buscarVigente(
+    tokenHash: string,
+  ): Promise<{ id: string; usuarioId: string } | null> {
     return prisma.refreshToken.findFirst({
       where: { tokenHash, usadoEn: null, expiraEn: { gt: new Date() } },
+      select: { id: true, usuarioId: true },
     });
   },
 
-  async marcarUsado(id: string): Promise<void> {
-    await prisma.refreshToken.update({
-      where: { id },
+  /**
+   * Marca el token como usado solo si seguía sin usar. Devuelve `true` si esta
+   * llamada fue la que lo consumió.
+   *
+   * Es una comparación y escritura en una sola operación a propósito: con un
+   * `update` incondicional, dos refrescos simultáneos con el mismo token
+   * obtendrían ambos una sesión nueva, que es exactamente lo que la rotación
+   * debe impedir.
+   */
+  async marcarUsado(id: string): Promise<boolean> {
+    const { count } = await prisma.refreshToken.updateMany({
+      where: { id, usadoEn: null },
       data: { usadoEn: new Date() },
     });
+
+    return count === 1;
   },
 };
 ```
@@ -998,7 +1109,25 @@ export type PayloadToken = {
   rol: Rol;
 };
 
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET ?? "secreto-de-desarrollo";
+/**
+ * Falta a propósito un valor por defecto: si el secreto no está configurado, el
+ * arranque debe fallar. Un literal de reserva escrito en el repositorio dejaría
+ * firmar tokens con una clave pública, y cualquiera podría forjarse un `rol:
+ * "ADMIN"` en el emprendimiento que quisiera.
+ */
+// Se resuelve dentro de una función porque TypeScript no propaga el
+// estrechamiento de un `if` de módulo hacia los closures declarados después:
+// con `const` + `if` sueltos, `jwt.sign` seguiría viendo `string | undefined`.
+const ACCESS_SECRET = ((): string => {
+  const secreto = process.env.JWT_ACCESS_SECRET;
+  if (!secreto) {
+    throw new Error(
+      "Falta la variable de entorno JWT_ACCESS_SECRET. Copia .env.example a .env.",
+    );
+  }
+  return secreto;
+})();
+
 const DURACION_ACCESS = "15m";
 export const DIAS_REFRESH = 30;
 
@@ -1072,10 +1201,17 @@ Y añadir estos dos métodos al objeto `authService`:
     const usuario = await usuarioRepository.buscarPorEmailGlobal(
       email.trim().toLowerCase(),
     );
-    if (!usuario) throw credencialesInvalidas;
 
-    const coincide = await verificarPassword(usuario.passwordHash, password);
-    if (!coincide) throw credencialesInvalidas;
+    // Si el correo no existe se verifica igualmente contra un hash señuelo y se
+    // descarta el resultado. Sin esto, la respuesta sería decenas de veces más
+    // rápida para un correo inexistente y ese tiempo delataría qué correos
+    // están registrados, aunque el mensaje de error sea idéntico.
+    const coincide = await verificarPassword(
+      usuario?.passwordHash ?? HASH_SENUELO,
+      password,
+    );
+
+    if (!usuario || !coincide) throw credencialesInvalidas;
 
     const { passwordHash: _descartado, ...seguro } = usuario;
     return abrirSesion(seguro);
@@ -1094,7 +1230,15 @@ Y añadir estos dos métodos al objeto `authService`:
       );
     }
 
-    await refreshTokenRepository.marcarUsado(guardado.id);
+    // Si otra petición simultánea lo consumió primero, esta pierde la carrera.
+    const loConsumioEsta = await refreshTokenRepository.marcarUsado(guardado.id);
+    if (!loConsumioEsta) {
+      throw new ErrorDeNegocio(
+        "REFRESH_INVALIDO",
+        "La sesión expiró, vuelve a entrar",
+        401,
+      );
+    }
 
     const usuario = await usuarioRepository.buscarPorIdGlobal(
       guardado.usuarioId,
@@ -1172,6 +1316,7 @@ import { z } from "zod";
 import { autenticar, soloAdmin } from "../src/middlewares/autenticar.js";
 import { validar } from "../src/middlewares/validar.js";
 import { manejarErrores } from "../src/middlewares/manejarErrores.js";
+import { crearLimitador } from "../src/middlewares/limites.js";
 import { firmarAccessToken } from "../src/services/token.service.js";
 
 function appDePrueba() {
@@ -1238,6 +1383,29 @@ describe("middlewares", () => {
     expect(res.status).toBe(400);
     expect(res.body.codigo).toBe("DATOS_INVALIDOS");
     expect(Array.isArray(res.body.detalles)).toBe(true);
+  });
+
+  // Los limitadores de la aplicación se desactivan bajo pruebas, así que aquí se
+  // construye uno propio que anula ese `skip` para comprobar que sí bloquea.
+  it("el limitador responde 429 al superar el límite", async () => {
+    const app = express();
+    app.use(
+      crearLimitador({
+        windowMs: 60_000,
+        limit: 1,
+        skip: () => false,
+        message: { codigo: "DEMASIADAS_PETICIONES", mensaje: "Espera un momento" },
+      }),
+    );
+    app.get("/x", (_req, res) => {
+      res.json({ ok: true });
+    });
+
+    expect((await request(app).get("/x")).status).toBe(200);
+
+    const bloqueada = await request(app).get("/x");
+    expect(bloqueada.status).toBe(429);
+    expect(bloqueada.body.codigo).toBe("DEMASIADAS_PETICIONES");
   });
 });
 ```
@@ -1348,22 +1516,39 @@ export function manejarErrores(
 `Backend/src/middlewares/limites.ts`:
 
 ```ts
-import rateLimit from "express-rate-limit";
+import rateLimit, { type Options } from "express-rate-limit";
 
-export const limiteGeneral = rateLimit({
+const enPruebas = process.env.NODE_ENV === "test";
+
+/**
+ * Fábrica de limitadores.
+ *
+ * Los limitadores montados en la aplicación se desactivan bajo pruebas: su
+ * contador vive en memoria y se comparte entre todos los casos de un mismo
+ * archivo, así que una suite que haga muchas peticiones empezaría a recibir 429
+ * ajenos a lo que está verificando y fallaría por una razón falsa. El
+ * comportamiento del limitador se prueba aparte, con una instancia propia que
+ * anula ese `skip`.
+ */
+export function crearLimitador(opciones: Partial<Options>) {
+  return rateLimit({
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: () => enPruebas,
+    ...opciones,
+  });
+}
+
+export const limiteGeneral = crearLimitador({
   windowMs: 60_000,
   limit: 120,
-  standardHeaders: true,
-  legacyHeaders: false,
   message: { codigo: "DEMASIADAS_PETICIONES", mensaje: "Espera un momento" },
 });
 
 /** Más estricto: frena la fuerza bruta contra el login. */
-export const limiteLogin = rateLimit({
+export const limiteLogin = crearLimitador({
   windowMs: 15 * 60_000,
   limit: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
   message: { codigo: "DEMASIADOS_INTENTOS", mensaje: "Demasiados intentos, espera 15 minutos" },
 });
 ```
@@ -1658,8 +1843,19 @@ describe("documentación de la API", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.openapi).toBe("3.1.0");
-    expect(Object.keys(res.body.paths)).toContain("/auth/login");
-    expect(Object.keys(res.body.paths)).toContain("/auth/registro");
+    expect(Object.keys(res.body.paths).sort()).toEqual([
+      "/auth/login",
+      "/auth/refresh",
+      "/auth/registro",
+      "/auth/yo",
+    ]);
+  });
+
+  it("declara que el perfil exige token, para que no se lea como público", async () => {
+    const res = await request(createApp()).get("/docs.json");
+
+    expect(res.body.components.securitySchemes.bearerAuth.scheme).toBe("bearer");
+    expect(res.body.paths["/auth/yo"].get.security).toEqual([{ bearerAuth: [] }]);
   });
 
   it("sirve la interfaz de Swagger", async () => {
@@ -1692,6 +1888,16 @@ export const documentoOpenApi = createDocument({
     description:
       "API para registro de ventas en ferias. Todos los montos son enteros de pesos colombianos.",
   },
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+        description: "Token de acceso obtenido en /auth/login.",
+      },
+    },
+  },
   paths: {
     "/auth/registro": {
       post: {
@@ -1710,6 +1916,7 @@ export const documentoOpenApi = createDocument({
         requestBody: { content: { "application/json": { schema: loginSchema } } },
         responses: {
           "200": { description: "Sesión iniciada" },
+          "400": { description: "Datos inválidos" },
           "401": { description: "Credenciales inválidas" },
         },
       },
@@ -1720,6 +1927,7 @@ export const documentoOpenApi = createDocument({
         requestBody: { content: { "application/json": { schema: refreshSchema } } },
         responses: {
           "200": { description: "Sesión renovada" },
+          "400": { description: "Datos inválidos" },
           "401": { description: "Refresh token inválido o ya usado" },
         },
       },
@@ -1727,9 +1935,12 @@ export const documentoOpenApi = createDocument({
     "/auth/yo": {
       get: {
         summary: "Perfil del usuario autenticado",
+        // Sin esto, Swagger no muestra el botón "Authorize" y cualquier
+        // generador de clientes daría el endpoint por público.
+        security: [{ bearerAuth: [] }],
         responses: {
           "200": { description: "Datos del usuario" },
-          "401": { description: "No autenticado" },
+          "401": { description: "No autenticado o sesión expirada" },
         },
       },
     },
@@ -1780,21 +1991,34 @@ git commit -m "docs(backend): documentacion OpenAPI con Swagger UI"
 `Backend/test/produccion.test.ts`:
 
 ```ts
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { readFileSync } from "node:fs";
 
 const paquete = JSON.parse(readFileSync("package.json", "utf8"));
 
 describe("configuración de producción", () => {
-  it("define el comando de arranque que aplica migraciones", () => {
-    expect(paquete.scripts["start:prod"]).toContain("prisma migrate deploy");
-    expect(paquete.scripts["start:prod"]).toContain("node dist/server.js");
+  // Comprueba el ORDEN, no solo la presencia: arrancar el servidor antes de
+  // aplicar las migraciones dejaría la API sirviendo contra un esquema viejo.
+  it("aplica las migraciones antes de arrancar el servidor", () => {
+    expect(paquete.scripts["start:prod"]).toMatch(
+      /prisma migrate deploy\s*&&\s*node dist\/server\.js/,
+    );
   });
 
-  it("no expone secretos por defecto en el código", () => {
-    const tokenService = readFileSync("src/services/token.service.ts", "utf8");
+  // Prueba de comportamiento, no de texto: sin el secreto, importar el módulo
+  // debe fallar. Una versión que buscara la cadena "process.env.JWT_ACCESS_SECRET"
+  // en el archivo seguiría pasando aunque alguien reintrodujera un valor de
+  // reserva al lado, que es justo la regresión que hay que impedir.
+  it("falla al arrancar si falta el secreto de firma, en vez de usar uno por defecto", async () => {
+    vi.resetModules();
+    vi.stubEnv("JWT_ACCESS_SECRET", "");
 
-    expect(tokenService).toContain("process.env.JWT_ACCESS_SECRET");
+    await expect(
+      import("../src/services/token.service.js"),
+    ).rejects.toThrow(/JWT_ACCESS_SECRET/);
+
+    vi.unstubAllEnvs();
+    vi.resetModules();
   });
 });
 ```
@@ -1842,7 +2066,7 @@ API en Express + Prisma + MySQL.
 ## Desarrollo local
 
 1. `cp .env.example .env`
-2. `docker compose up -d` (levanta MySQL en el puerto 3307)
+2. `docker compose up -d` (levanta MySQL en el puerto 3308)
 3. `npx prisma migrate dev`
 4. `npm run dev`
 
@@ -1857,9 +2081,10 @@ La documentación queda en http://localhost:3000/docs
 | Variable | Descripción |
 |---|---|
 | `DATABASE_URL` | Cadena de conexión de MySQL |
-| `JWT_ACCESS_SECRET` | Secreto del token de acceso |
-| `JWT_REFRESH_SECRET` | Secreto reservado para el refresh |
+| `JWT_ACCESS_SECRET` | Secreto del token de acceso. Sin él la API **no arranca**, a propósito |
+| `JWT_REFRESH_SECRET` | Reservada: hoy el refresh se guarda hasheado y no se firma |
 | `CORS_ORIGIN` | URL del frontend en Vercel |
+| `PORT` | La inyecta Railway automáticamente; en local se usa 3000 |
 ```
 
 - [ ] **Step 4: Ejecutar toda la suite y la verificación de tipos**
