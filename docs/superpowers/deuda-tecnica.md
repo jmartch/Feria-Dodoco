@@ -5,24 +5,15 @@ está mal, por qué se dejó así, y cuándo hay que resolverlo.
 
 ## Obligatorio antes de cerrar la Fase 2
 
-### 1. Falta la prueba de fuga entre emprendimientos a nivel HTTP
+### 1. Prueba de fuga entre emprendimientos a nivel HTTP — RESUELTA (Plan 2, Task 7)
 
-**Qué pasa:** las pruebas demuestran que la *capa de repositorios* filtra por
-emprendimiento (`Backend/test/aislamiento.test.ts`, la prueba "no deja leer un usuario de
-otro emprendimiento aunque se sepa su id"). Lo que **ninguna prueba demuestra** es que la
-capa HTTP le pase el scope correcto.
-
-**Por qué no se pudo cubrir en el Plan 1:** el único endpoint autenticado es `GET
-/auth/yo`, que consulta por `id`. Como `id` es clave primaria única, añadir el filtro por
-`emprendimientoId` no puede cambiar el resultado: revertir el controlador a una consulta
-sin scope daría exactamente la misma respuesta y la prueba seguiría en verde. Es
-estructuralmente imposible cubrir el hueco con ese endpoint.
-
-**Qué hacer:** al añadir el primer endpoint donde el scope sí puede divergir —cualquiera
-que busque o liste por un identificador que no sea el del propio usuario autenticado—
-escribir ahí la prueba: dos emprendimientos, el token de A pidiendo un recurso de B, y
-esperar 404 o 403. Sin ella, un endpoint de negocio que olvide el scope pasaría
-inadvertido, y no hay RLS que lo atrape.
+La prueba "un emprendimiento no ve ni puede tocar las categorias de otro"
+(`Backend/test/catalogo.routes.test.ts`) cubre el hueco: el token de A pide y edita
+un recurso de B por su id y recibe 404, con la BD verificada intacta. Es
+scope-divergente (el PUT por id de otro emprendimiento debe fallar), asi que
+revertir el scope en el controlador o el repositorio la pone en rojo. Verificado
+por mutacion el 2026-08-19: quitando `emprendimientoId` del `updateMany` la prueba
+falla.
 
 ### 2. Decisión pendiente: revocación de familia al reutilizar un refresh token
 
