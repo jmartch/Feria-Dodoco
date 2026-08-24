@@ -5,6 +5,7 @@ import swaggerUi from "swagger-ui-express";
 import { limiteGeneral } from "./middlewares/limites.js";
 import { manejarErrores } from "./middlewares/manejarErrores.js";
 import { authRoutes } from "./routes/auth.routes.js";
+import { catalogoRoutes } from "./routes/catalogo.routes.js";
 import { documentoOpenApi } from "./docs/openapi.js";
 
 export function createApp(): Express {
@@ -24,6 +25,7 @@ export function createApp(): Express {
   });
 
   app.use("/auth", authRoutes);
+  app.use("/catalogo", catalogoRoutes);
 
   app.get("/docs.json", (_req, res) => {
     res.json(documentoOpenApi);
