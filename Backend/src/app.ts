@@ -6,6 +6,7 @@ import { limiteGeneral } from "./middlewares/limites.js";
 import { manejarErrores } from "./middlewares/manejarErrores.js";
 import { authRoutes } from "./routes/auth.routes.js";
 import { catalogoRoutes } from "./routes/catalogo.routes.js";
+import { eventoRoutes } from "./routes/evento.routes.js";
 import { documentoOpenApi } from "./docs/openapi.js";
 
 export function createApp(): Express {
@@ -26,6 +27,7 @@ export function createApp(): Express {
 
   app.use("/auth", authRoutes);
   app.use("/catalogo", catalogoRoutes);
+  app.use("/eventos", eventoRoutes);
 
   app.get("/docs.json", (_req, res) => {
     res.json(documentoOpenApi);
