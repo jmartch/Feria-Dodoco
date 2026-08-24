@@ -81,15 +81,21 @@ describe("registro de ventas", () => {
     expect(await prisma.ventaItem.count()).toBe(1);
   });
 
-  it("dos envíos simultáneos del mismo uuid dejan una sola venta", async () => {
+  it("dos envíos simultáneos del mismo uuid terminan ambos en éxito con la misma venta", async () => {
     const uuid = randomUUID();
 
-    await Promise.allSettled([
+    // No basta con contar que haya una sola venta: el envío que pierde la carrera
+    // no debe recibir un error, sino la venta que ganó. Si no, el celular que
+    // reintentó tras perder la señal vería un fallo y marcaría la venta como
+    // rechazada aunque en realidad sí quedó registrada.
+    const [primera, segunda] = await Promise.all([
       ventaService.registrar(scopeA, "u1", entrada(uuid, qrId)),
       ventaService.registrar(scopeA, "u1", entrada(uuid, qrId)),
     ]);
 
+    expect(primera.id).toBe(segunda.id);
     expect(await prisma.venta.count()).toBe(1);
+    expect(await prisma.ventaItem.count()).toBe(1);
   });
 
   it("guarda la comisión del momento aunque después cambie la del método", async () => {
