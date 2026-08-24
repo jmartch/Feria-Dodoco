@@ -8,6 +8,7 @@ import {
   eventoSchema,
   lineaSchema,
 } from "../schemas/evento.schema.js";
+import { ventaRoutes } from "./venta.routes.js";
 
 export const eventoRoutes = Router();
 
@@ -24,3 +25,5 @@ eventoRoutes.delete("/:id/lineas/:lineaId", soloAdmin, eventoController.eliminar
 
 eventoRoutes.get("/:id/descuentos", eventoController.listarDescuentos);
 eventoRoutes.post("/:id/descuentos", soloAdmin, validar(descuentoSchema), eventoController.crearDescuento);
+
+eventoRoutes.use("/:id", ventaRoutes);
