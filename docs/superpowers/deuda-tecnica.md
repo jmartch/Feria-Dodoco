@@ -67,6 +67,26 @@ claim `tipo: "access"` que `autenticar` exija.
 - **Indentación del `try/catch`** en `emprendimiento.repository.ts`: el cuerpo no quedó
   sangrado dentro del `try`. Cosmético, lo arreglará un formateador cuando se añada uno.
 
+## Revisado en la Fase 2
+
+### El servidor confia en los precios que manda el dispositivo
+
+`venta.service.ts` calcula la venta con los `precioUnitario` que llegan en el
+cuerpo (`entrada.lineas`), no con los precios de las `EventoItem` del evento. El
+candado del evento impide EDITAR el catalogo por la API, pero no impide que una
+venta registre una linea a un precio distinto del catalogo bloqueado.
+
+**Por que se dejo asi:** el diseno es local-first (spec 4.4 y 7). El dispositivo
+tiene el catalogo y calcula; la venta guarda la foto de lo que se cobro de
+verdad. Volver a validar cada linea contra `EventoItem` en el servidor iria
+contra ese modelo y no aporta en el escenario real (el vendedor suele ser el
+dueno).
+
+**Cuando reabrirlo:** si en la Fase 3 entran vendedores que no son el dueno y se
+quiere impedir que sub-registren una venta, el servidor tendria que resolver el
+precio desde `EventoItem` por `origenId` en vez de confiar en el cuerpo. Decidir
+entonces, no ahora.
+
 ## Notas de mantenimiento
 
 - **La prueba de `/docs.json` usa una lista cerrada de rutas.** Toda tarea que añada un
