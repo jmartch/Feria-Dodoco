@@ -129,8 +129,7 @@ export function Eventos() {
                 <span className="evento-fecha">{formatearFecha(evento.fechaInicio)}</span>
               </div>
               <div className="evento-acciones">
-                <Link to={`/eventos/${evento.id}/panel`} className="evento-chip">Panel</Link>
-                <Link to={`/eventos/${evento.id}/vender`} className="evento-chip vender">Vender</Link>
+                <Link to={`/eventos/${evento.id}/vender`} className="evento-chip vender">Abrir feria</Link>
               </div>
             </div>
           ))}

@@ -15,13 +15,19 @@ beforeEach(async () => {
   localStorage.clear();
   await db.ventasPendientes.clear();
   servidorMock.use(
-    http.get(`${BASE}/eventos/e1/lineas`, () =>
-      HttpResponse.json([{ id: "l1", nombre: "Pines", precio: 12000, origenTipo: "CATEGORIA", origenId: "c1" }]),
+    // Los productos vendibles salen del catálogo del emprendimiento.
+    http.get(`${BASE}/catalogo/categorias`, () =>
+      HttpResponse.json([{ id: "l1", nombre: "Pines", precio: 12000 }]),
     ),
     http.get(`${BASE}/eventos/e1/descuentos`, () => HttpResponse.json([])),
     http.get(`${BASE}/catalogo/metodos-pago`, () =>
       HttpResponse.json([{ id: "m1", nombre: "Efectivo", comisionPct: 0, activo: true }]),
     ),
+    // El resumen del día pide totales y la lista de ventas.
+    http.get(`${BASE}/eventos/e1/totales`, () =>
+      HttpResponse.json({ cantidadVentas: 0, bruto: 0, descuentos: 0, porMetodo: [], meta: 1000000 }),
+    ),
+    http.get(`${BASE}/eventos/e1/ventas`, () => HttpResponse.json([])),
     // La sincronización de fondo que dispara "Registrar" aterriza aquí. La fila
     // queda en la base (estado sincronizada), así que el conteo total sigue en 1.
     http.post(`${BASE}/eventos/e1/ventas`, () =>

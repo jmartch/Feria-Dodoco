@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { crearApiEventos } from "../api/eventos";
@@ -7,8 +7,13 @@ import { crearApiCatalogo } from "../api/catalogo";
 import { crearCola } from "../sync/cola";
 import { calcularVenta } from "../dinero/calculo";
 import { formatearPesos } from "../dinero/formato";
-import type { Descuento, EventoItem, MetodoPago } from "../api/tipos";
+import { ventasACSV, descargarCSV } from "../dinero/csv";
+import type { Descuento, MetodoPago, TotalesEvento, VentaGuardada } from "../api/tipos";
+import { BarraMeta } from "../componentes/BarraMeta";
 import { Cargando } from "../componentes/Cargando";
+
+// Producto vendible: sale directo del catálogo del emprendimiento.
+type Producto = { id: string; nombre: string; precio: number };
 
 export function Vender() {
   const { id: eventoId = "" } = useParams();
@@ -18,35 +23,45 @@ export function Vender() {
   const apiCatalogo = useMemo(() => crearApiCatalogo(cliente), [cliente]);
   const cola = useMemo(() => crearCola(apiVentas), [apiVentas]);
 
-  const [lineas, setLineas] = useState<EventoItem[] | null>(null);
+  const [productos, setProductos] = useState<Producto[] | null>(null);
   const [descuentos, setDescuentos] = useState<Descuento[]>([]);
   const [metodos, setMetodos] = useState<MetodoPago[]>([]);
+  const [totales, setTotales] = useState<TotalesEvento | null>(null);
+  const [ventas, setVentas] = useState<VentaGuardada[]>([]);
+  const [verResumen, setVerResumen] = useState(false);
+
   const [cantidades, setCantidades] = useState<Record<string, number>>({});
   const [descuentoId, setDescuentoId] = useState<string | null>(null);
   const [metodoId, setMetodoId] = useState<string>("");
   const [recibido, setRecibido] = useState<number>(0);
 
+  const refrescarResumen = useCallback(() => {
+    apiVentas.totales(eventoId).then(setTotales).catch(() => {});
+    apiVentas.listar(eventoId).then(setVentas).catch(() => {});
+  }, [apiVentas, eventoId]);
+
   useEffect(() => {
     Promise.all([
-      apiEventos.listarLineas(eventoId),
+      apiCatalogo.listarCategorias(),
       apiEventos.listarDescuentos(eventoId),
       apiCatalogo.listarMetodos(),
-    ]).then(([ls, ds, ms]) => {
-      setLineas(ls);
+    ]).then(([cats, ds, ms]) => {
+      setProductos(cats.map((c) => ({ id: c.id, nombre: c.nombre, precio: c.precio })));
       setDescuentos(ds.filter((d) => d.activo));
       setMetodos(ms.filter((m) => m.activo));
       if (ms[0]) setMetodoId(ms[0].id);
     });
-  }, [apiEventos, apiCatalogo, eventoId]);
+    refrescarResumen();
+  }, [apiCatalogo, apiEventos, eventoId, refrescarResumen]);
 
   const descuentoActivo = descuentos.find((d) => d.id === descuentoId) ?? null;
   const metodoActivo = metodos.find((m) => m.id === metodoId) ?? null;
 
   const calculo = useMemo(() => {
-    const items = (lineas ?? []).map((l) => ({
-      nombre: l.nombre,
-      precioUnitario: l.precio,
-      cantidad: cantidades[l.id] ?? 0,
+    const items = (productos ?? []).map((p) => ({
+      nombre: p.nombre,
+      precioUnitario: p.precio,
+      cantidad: cantidades[p.id] ?? 0,
     }));
     return calcularVenta({
       lineas: items,
@@ -54,10 +69,10 @@ export function Vender() {
       comisionPct: metodoActivo?.comisionPct ?? 0,
       recibido,
     });
-  }, [lineas, cantidades, descuentoActivo, metodoActivo, recibido]);
+  }, [productos, cantidades, descuentoActivo, metodoActivo, recibido]);
 
-  function cambiarCantidad(lineaId: string, delta: number) {
-    setCantidades((prev) => ({ ...prev, [lineaId]: Math.max(0, (prev[lineaId] ?? 0) + delta) }));
+  function cambiarCantidad(productoId: string, delta: number) {
+    setCantidades((prev) => ({ ...prev, [productoId]: Math.max(0, (prev[productoId] ?? 0) + delta) }));
   }
 
   async function registrar() {
@@ -68,6 +83,7 @@ export function Vender() {
       metodoPagoId: metodoActivo.id,
       descuentoId: descuentoActivo?.id ?? null,
       recibido,
+      // La hora de la venta queda registrada aquí, en el momento exacto del cobro.
       creadaEnDispositivo: new Date().toISOString(),
     };
     // Local-first: se guarda y se limpia sin esperar a la red. La cola envía sola.
@@ -75,35 +91,63 @@ export function Vender() {
     setCantidades({});
     setRecibido(0);
     setDescuentoId(null);
-    void cola.sincronizar();
+    await cola.sincronizar();
+    refrescarResumen();
   }
 
-  if (!lineas) return <Cargando que="la venta" />;
+  function exportar() {
+    descargarCSV(`ventas-${eventoId}.csv`, ventasACSV(ventas));
+  }
+
+  if (!productos) return <Cargando que="la venta" />;
 
   return (
     <section>
       <h1>Vender</h1>
 
+      <div className="resumen-dia">
+        <BarraMeta bruto={totales?.bruto ?? 0} meta={totales?.meta ?? 0} />
+        <div className="resumen-acciones">
+          <button type="button" onClick={() => setVerResumen((v) => !v)}>
+            {verResumen ? "Ocultar resumen" : "Ver resumen"}
+          </button>
+          <button type="button" onClick={exportar} disabled={ventas.length === 0}>
+            Exportar CSV
+          </button>
+        </div>
+        {verResumen && totales && (
+          <div className="resumen-detalle">
+            <div className="metodo-fila"><span>Ventas</span><strong>{totales.cantidadVentas}</strong></div>
+            {totales.porMetodo.map((m) => (
+              <div className="metodo-fila" key={m.metodo}>
+                <span>{m.metodo}</span>
+                <strong>{formatearPesos(m.total)}</strong>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <h2>Productos</h2>
-      {lineas.length === 0 ? (
-        <p className="venta-vacia">Este evento aún no tiene productos. Agrégalos en “Líneas”.</p>
+      {productos.length === 0 ? (
+        <p className="venta-vacia">Aún no tienes productos. Agrégalos en “Catálogo”.</p>
       ) : (
         <ul className="venta-lista">
-          {lineas.map((linea) => {
-            const cantidad = cantidades[linea.id] ?? 0;
+          {productos.map((producto) => {
+            const cantidad = cantidades[producto.id] ?? 0;
             return (
-              <li key={linea.id} aria-label={linea.nombre} className={`sel-fila${cantidad > 0 ? " activo" : ""}`}>
+              <li key={producto.id} aria-label={producto.nombre} className={`sel-fila${cantidad > 0 ? " activo" : ""}`}>
                 <div className="prod-emoji">🛍️</div>
                 <div className="sel-info">
-                  <div className="sel-nombre">{linea.nombre}</div>
-                  <div className="sel-precio">{formatearPesos(linea.precio)}</div>
+                  <div className="sel-nombre">{producto.nombre}</div>
+                  <div className="sel-precio">{formatearPesos(producto.precio)}</div>
                 </div>
                 <div className="stepper">
-                  <button type="button" onClick={() => cambiarCantidad(linea.id, -1)}>−</button>
+                  <button type="button" onClick={() => cambiarCantidad(producto.id, -1)}>−</button>
                   <span className="cant">{cantidad}</span>
-                  <button type="button" onClick={() => cambiarCantidad(linea.id, 1)}>+</button>
+                  <button type="button" onClick={() => cambiarCantidad(producto.id, 1)}>+</button>
                 </div>
-                <span className="sel-subtotal">{formatearPesos(linea.precio * cantidad)}</span>
+                <span className="sel-subtotal">{formatearPesos(producto.precio * cantidad)}</span>
               </li>
             );
           })}

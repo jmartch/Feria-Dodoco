@@ -54,6 +54,12 @@ export type VentaGuardada = {
   total: number;
   metodoPagoNombre: string;
   creadaEnDispositivo: string;
+  // El backend los devuelve al listar; opcionales para no romper otros usos.
+  subtotal?: number;
+  descuentoNombre?: string | null;
+  descuentoValor?: number;
+  recibido?: number;
+  cambio?: number;
 };
 
 export type TotalesEvento = {
