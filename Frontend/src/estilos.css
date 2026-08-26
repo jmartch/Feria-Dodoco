@@ -448,3 +448,14 @@ form.form-evento { max-width: 100%; margin: 0; padding: 18px; border-radius: var
 .nota { color: var(--gris); font-size: 0.82rem; }
 .gasto-monto { margin-left: auto; font-variant-numeric: tabular-nums; }
 .gasto-monto + button { margin-left: 12px; }
+
+/* ---- Selector de emoji -------------------------------------------------- */
+
+.emoji-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.emoji-op {
+  width: 48px; height: 48px; min-height: 48px; padding: 0;
+  font-size: 1.4rem; line-height: 1;
+  border-radius: 12px; background: #fff; border: 1.5px solid var(--gris-claro);
+}
+.emoji-op:hover { border-color: var(--rosa-borde); background: var(--rosa-suave); }
+.emoji-op.activo { border-color: var(--rosa); background: var(--rosa-suave); box-shadow: 0 0 0 3px var(--rosa-suave); }

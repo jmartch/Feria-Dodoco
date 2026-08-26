@@ -14,7 +14,7 @@ import { BarraMeta } from "../componentes/BarraMeta";
 import { Cargando } from "../componentes/Cargando";
 
 // Producto vendible: sale directo del catálogo del emprendimiento.
-type Producto = { id: string; nombre: string; precio: number };
+type Producto = { id: string; nombre: string; precio: number; icono: string | null };
 
 export function Vender() {
   const { id: eventoId = "" } = useParams();
@@ -48,7 +48,7 @@ export function Vender() {
       apiEventos.listarDescuentos(eventoId),
       apiCatalogo.listarMetodos(),
     ]).then(([cats, ds, ms]) => {
-      setProductos(cats.map((c) => ({ id: c.id, nombre: c.nombre, precio: c.precio })));
+      setProductos(cats.map((c) => ({ id: c.id, nombre: c.nombre, precio: c.precio, icono: c.icono ?? null })));
       setDescuentos(ds.filter((d) => d.activo));
       setMetodos(ms.filter((m) => m.activo));
       if (ms[0]) setMetodoId(ms[0].id);
@@ -161,7 +161,7 @@ export function Vender() {
             const cantidad = cantidades[producto.id] ?? 0;
             return (
               <li key={producto.id} aria-label={producto.nombre} className={`sel-fila${cantidad > 0 ? " activo" : ""}`}>
-                <div className="prod-emoji">🛍️</div>
+                <div className="prod-emoji">{producto.icono ?? "🛍️"}</div>
                 <div className="sel-info">
                   <div className="sel-nombre">{producto.nombre}</div>
                   <div className="sel-precio">{formatearPesos(producto.precio)}</div>

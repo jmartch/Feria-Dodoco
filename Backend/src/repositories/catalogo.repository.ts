@@ -6,11 +6,13 @@ export type Categoria = {
   id: string;
   nombre: string;
   precio: number;
+  icono: string | null;
 };
 
 export type NuevaCategoria = {
   nombre: string;
   precio: number;
+  icono?: string | null;
 };
 
 export type Producto = {
@@ -26,7 +28,7 @@ export type NuevoProducto = {
   categoriaId: string;
 };
 
-const camposCategoria = { id: true, nombre: true, precio: true } as const;
+const camposCategoria = { id: true, nombre: true, precio: true, icono: true } as const;
 const camposProducto = {
   id: true,
   nombre: true,

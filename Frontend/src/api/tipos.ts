@@ -25,7 +25,7 @@ export type Sesion = {
   usuario: Usuario;
 };
 
-export type Categoria = { id: string; nombre: string; precio: number };
+export type Categoria = { id: string; nombre: string; precio: number; icono?: string | null };
 export type MetodoPago = { id: string; nombre: string; comisionPct: number; activo: boolean };
 
 export type Evento = {

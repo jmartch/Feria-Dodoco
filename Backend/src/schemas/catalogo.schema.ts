@@ -9,6 +9,9 @@ const pesos = z
 export const categoriaSchema = z.object({
   nombre: z.string().min(1, "Escribe el nombre"),
   precio: pesos,
+  // Un emoji (opcional). Se limita el largo; no se valida que sea un emoji "real"
+  // porque la lista de opciones la controla el frontend.
+  icono: z.string().max(16).optional().nullable(),
 });
 
 export const metodoPagoSchema = z.object({

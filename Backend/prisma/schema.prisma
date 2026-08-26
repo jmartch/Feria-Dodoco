@@ -63,6 +63,8 @@ model Categoria {
   id               String     @id
   nombre           String
   precio           Int
+  // Emoji elegido por el usuario para reconocer el producto de un vistazo.
+  icono            String?
   emprendimientoId String
   creadaEn         DateTime   @default(now())
   productos        Producto[]
