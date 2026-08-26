@@ -1,3 +1,10 @@
+import { AuthProvider } from "./auth/AuthContext";
+import { AppRouter } from "./router";
+
 export function App() {
-  return <h1>Dodoco Store</h1>;
+  return (
+    <AuthProvider>
+      <AppRouter />
+    </AuthProvider>
+  );
 }
