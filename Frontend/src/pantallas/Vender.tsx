@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { crearApiEventos } from "../api/eventos";
 import { crearApiVentas } from "../api/ventas";
@@ -18,7 +18,7 @@ type Producto = { id: string; nombre: string; precio: number };
 
 export function Vender() {
   const { id: eventoId = "" } = useParams();
-  const { cliente } = useAuth();
+  const { cliente, usuario } = useAuth();
   const apiEventos = useMemo(() => crearApiEventos(cliente), [cliente]);
   const apiVentas = useMemo(() => crearApiVentas(cliente), [cliente]);
   const apiCatalogo = useMemo(() => crearApiCatalogo(cliente), [cliente]);
@@ -145,6 +145,9 @@ export function Vender() {
                 <strong>{formatearPesos(m.total)}</strong>
               </div>
             ))}
+            {usuario?.rol === "ADMIN" && (
+              <Link to={`/eventos/${eventoId}/gastos`} className="evento-chip">Gastos y ganancia →</Link>
+            )}
           </div>
         )}
       </div>

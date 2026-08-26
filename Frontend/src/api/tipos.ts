@@ -48,6 +48,14 @@ export type EventoItem = {
 
 export type Descuento = { id: string; nombre: string; porcentaje: number; activo: boolean };
 
+export type Gasto = {
+  id: string;
+  concepto: string;
+  categoria: string;
+  monto: number;
+  creadoEn: string;
+};
+
 export type VentaGuardada = {
   id: string;
   uuid: string;

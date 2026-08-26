@@ -112,7 +112,23 @@ model Evento {
   lineas             EventoItem[]
   descuentos         Descuento[]
   ventas             Venta[]
+  gastos             Gasto[]
 
+  @@index([emprendimientoId])
+}
+
+model Gasto {
+  id               String   @id
+  eventoId         String
+  emprendimientoId String
+  concepto         String
+  categoria        String
+  // Entero de pesos, igual que el resto del dinero.
+  monto            Int
+  creadoEn         DateTime @default(now())
+  evento           Evento   @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+
+  @@index([eventoId])
   @@index([emprendimientoId])
 }
 

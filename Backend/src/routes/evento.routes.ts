@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { eventoController } from "../controllers/evento.controller.js";
+import { gastoController } from "../controllers/gasto.controller.js";
 import { autenticar, soloAdmin } from "../middlewares/autenticar.js";
 import { validar } from "../middlewares/validar.js";
 import {
@@ -8,6 +9,7 @@ import {
   eventoSchema,
   lineaSchema,
 } from "../schemas/evento.schema.js";
+import { gastoSchema } from "../schemas/gasto.schema.js";
 import { ventaRoutes } from "./venta.routes.js";
 
 export const eventoRoutes = Router();
@@ -25,5 +27,10 @@ eventoRoutes.delete("/:id/lineas/:lineaId", soloAdmin, eventoController.eliminar
 
 eventoRoutes.get("/:id/descuentos", eventoController.listarDescuentos);
 eventoRoutes.post("/:id/descuentos", soloAdmin, validar(descuentoSchema), eventoController.crearDescuento);
+
+// Gastos: información del dueño, solo para admin.
+eventoRoutes.get("/:id/gastos", soloAdmin, gastoController.listar);
+eventoRoutes.post("/:id/gastos", soloAdmin, validar(gastoSchema), gastoController.crear);
+eventoRoutes.delete("/:id/gastos/:gastoId", soloAdmin, gastoController.eliminar);
 
 eventoRoutes.use("/:id", ventaRoutes);

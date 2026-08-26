@@ -9,6 +9,7 @@ import { Eventos } from "./pantallas/Eventos";
 import { Vender } from "./pantallas/Vender";
 import { Panel } from "./pantallas/Panel";
 import { Lineas } from "./pantallas/Lineas";
+import { Gastos } from "./pantallas/Gastos";
 import { Catalogo } from "./pantallas/Catalogo";
 import { Configuracion } from "./pantallas/Configuracion";
 
@@ -38,6 +39,7 @@ export function Rutas() {
           <Route path="/eventos/:id/panel" element={<Panel />} />
           <Route element={<SoloAdmin />}>
             <Route path="/eventos/:id/lineas" element={<Lineas />} />
+            <Route path="/eventos/:id/gastos" element={<Gastos />} />
             <Route path="/catalogo" element={<Catalogo />} />
             <Route path="/configuracion" element={<Configuracion />} />
           </Route>
