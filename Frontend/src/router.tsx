@@ -4,6 +4,7 @@ import { SoloAdmin } from "./componentes/SoloAdmin";
 import { Login } from "./pantallas/Login";
 import { Registro } from "./pantallas/Registro";
 import { Eventos } from "./pantallas/Eventos";
+import { Vender } from "./pantallas/Vender";
 import { Configuracion } from "./pantallas/Configuracion";
 
 // Rutas sin el BrowserRouter, para poder envolverlas con MemoryRouter en pruebas.
@@ -14,6 +15,7 @@ export function Rutas() {
       <Route path="/registro" element={<Registro />} />
       <Route element={<RutaProtegida />}>
         <Route path="/eventos" element={<Eventos />} />
+        <Route path="/eventos/:id/vender" element={<Vender />} />
         <Route element={<SoloAdmin />}>
           <Route path="/configuracion" element={<Configuracion />} />
         </Route>
