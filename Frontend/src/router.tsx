@@ -7,6 +7,7 @@ import { Eventos } from "./pantallas/Eventos";
 import { Vender } from "./pantallas/Vender";
 import { Panel } from "./pantallas/Panel";
 import { Lineas } from "./pantallas/Lineas";
+import { Catalogo } from "./pantallas/Catalogo";
 import { Configuracion } from "./pantallas/Configuracion";
 
 // Rutas sin el BrowserRouter, para poder envolverlas con MemoryRouter en pruebas.
@@ -21,6 +22,7 @@ export function Rutas() {
         <Route path="/eventos/:id/panel" element={<Panel />} />
         <Route element={<SoloAdmin />}>
           <Route path="/eventos/:id/lineas" element={<Lineas />} />
+          <Route path="/catalogo" element={<Catalogo />} />
           <Route path="/configuracion" element={<Configuracion />} />
         </Route>
       </Route>
