@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `MetodoPago` ADD COLUMN `orden` INTEGER NOT NULL DEFAULT 0;
