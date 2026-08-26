@@ -4,9 +4,11 @@ import { useAuth } from "../auth/AuthContext";
 import { ErrorApi } from "../api/tipos";
 import { Aviso } from "../componentes/Aviso";
 
-export function Login() {
-  const { entrar } = useAuth();
+export function Registro() {
+  const { registrar } = useAuth();
   const navegar = useNavigate();
+  const [nombreEmprendimiento, setNombreEmprendimiento] = useState("");
+  const [nombreUsuario, setNombreUsuario] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -17,10 +19,10 @@ export function Login() {
     setError(null);
     setEnviando(true);
     try {
-      await entrar(email, password);
+      await registrar({ nombreEmprendimiento, nombreUsuario, email, password });
       navegar("/eventos");
     } catch (err) {
-      setError(err instanceof ErrorApi ? err.message : "No se pudo entrar. Revisa tu conexión.");
+      setError(err instanceof ErrorApi ? err.message : "No se pudo crear la cuenta.");
     } finally {
       setEnviando(false);
     }
@@ -28,19 +30,27 @@ export function Login() {
 
   return (
     <form onSubmit={enviar}>
-      <h1>Entrar</h1>
+      <h1>Crear emprendimiento</h1>
       {error && <Aviso mensaje={error} />}
+      <label>
+        Nombre del emprendimiento
+        <input value={nombreEmprendimiento} onChange={(e) => setNombreEmprendimiento(e.target.value)} required />
+      </label>
+      <label>
+        Tu nombre
+        <input value={nombreUsuario} onChange={(e) => setNombreUsuario(e.target.value)} required />
+      </label>
       <label>
         Correo
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </label>
       <label>
         Contraseña
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
       </label>
-      <button type="submit" disabled={enviando}>Entrar</button>
+      <button type="submit" disabled={enviando}>Crear cuenta</button>
       <p>
-        ¿No tienes cuenta? <Link to="/registro">Crea tu emprendimiento</Link>
+        ¿Ya tienes cuenta? <Link to="/login">Entrar</Link>
       </p>
     </form>
   );

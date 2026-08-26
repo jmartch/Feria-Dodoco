@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { RutaProtegida } from "./componentes/RutaProtegida";
 import { SoloAdmin } from "./componentes/SoloAdmin";
 import { Login } from "./pantallas/Login";
+import { Registro } from "./pantallas/Registro";
 import { Eventos } from "./pantallas/Eventos";
 import { Configuracion } from "./pantallas/Configuracion";
 
@@ -10,6 +11,7 @@ export function Rutas() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/registro" element={<Registro />} />
       <Route element={<RutaProtegida />}>
         <Route path="/eventos" element={<Eventos />} />
         <Route element={<SoloAdmin />}>
