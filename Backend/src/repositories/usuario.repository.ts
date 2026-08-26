@@ -82,4 +82,12 @@ export const usuarioRepository = {
       select: camposSeguros,
     });
   },
+
+  /** Devuelve `false` si el usuario no es de este emprendimiento. */
+  async eliminar(scope: Scope, id: string): Promise<boolean> {
+    const { count } = await prisma.usuario.deleteMany({
+      where: { id, emprendimientoId: scope.emprendimientoId },
+    });
+    return count === 1;
+  },
 };

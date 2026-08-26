@@ -3,6 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 import { crearApiCatalogo } from "../api/catalogo";
 import type { MetodoPago } from "../api/tipos";
 import { Cargando } from "../componentes/Cargando";
+import { Empleados } from "../componentes/Empleados";
 
 export function Configuracion() {
   const { cliente } = useAuth();
@@ -54,6 +55,8 @@ export function Configuracion() {
       <label>Nombre<input value={nombre} onChange={(e) => setNombre(e.target.value)} /></label>
       <label>Comisión (%)<input type="number" min={0} step={0.1} value={porcentaje || ""} onChange={(e) => setPorcentaje(Math.max(0, Number(e.target.value)))} /></label>
       <button type="button" onClick={agregar}>Agregar método</button>
+
+      <Empleados />
     </section>
   );
 }
