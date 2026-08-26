@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { crearApiEventos } from "../api/eventos";
 import { crearApiVentas } from "../api/ventas";
+import { crearApiCatalogo } from "../api/catalogo";
 import { crearCola } from "../sync/cola";
 import { calcularVenta } from "../dinero/calculo";
 import { formatearPesos } from "../dinero/formato";
@@ -14,6 +15,7 @@ export function Vender() {
   const { cliente } = useAuth();
   const apiEventos = useMemo(() => crearApiEventos(cliente), [cliente]);
   const apiVentas = useMemo(() => crearApiVentas(cliente), [cliente]);
+  const apiCatalogo = useMemo(() => crearApiCatalogo(cliente), [cliente]);
   const cola = useMemo(() => crearCola(apiVentas), [apiVentas]);
 
   const [lineas, setLineas] = useState<EventoItem[] | null>(null);
@@ -28,14 +30,14 @@ export function Vender() {
     Promise.all([
       apiEventos.listarLineas(eventoId),
       apiEventos.listarDescuentos(eventoId),
-      cliente.pedir<MetodoPago[]>("/catalogo/metodos-pago"),
+      apiCatalogo.listarMetodos(),
     ]).then(([ls, ds, ms]) => {
       setLineas(ls);
       setDescuentos(ds.filter((d) => d.activo));
       setMetodos(ms.filter((m) => m.activo));
       if (ms[0]) setMetodoId(ms[0].id);
     });
-  }, [apiEventos, cliente, eventoId]);
+  }, [apiEventos, apiCatalogo, eventoId]);
 
   const descuentoActivo = descuentos.find((d) => d.id === descuentoId) ?? null;
   const metodoActivo = metodos.find((m) => m.id === metodoId) ?? null;
