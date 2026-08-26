@@ -41,8 +41,8 @@ it("un admin crea un evento con sus fechas y aparece en la lista", async () => {
   await userEvent.type(screen.getByLabelText(/contraseña/i), "clave12345");
   await userEvent.click(screen.getByRole("button", { name: /entrar/i }));
 
-  // Ya en Eventos: la forma de crear solo la ve el admin.
-  await screen.findByRole("heading", { name: /crear evento/i });
+  // Ya en Eventos: el admin abre la forma con el botón "Nuevo evento".
+  await userEvent.click(await screen.findByRole("button", { name: /nuevo evento/i }));
   await userEvent.type(screen.getByLabelText("Nombre"), "Feria de Mayo");
   await userEvent.click(screen.getByRole("button", { name: /crear evento/i }));
 

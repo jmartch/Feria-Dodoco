@@ -50,7 +50,6 @@ export function Vender() {
     }));
     return calcularVenta({
       lineas: items,
-      // El vendedor no ve la comisión, pero se guarda para el registro contable.
       descuentoPct: descuentoActivo?.porcentaje ?? 0,
       comisionPct: metodoActivo?.comisionPct ?? 0,
       recibido,
@@ -86,77 +85,86 @@ export function Vender() {
       <h1>Vender</h1>
 
       <h2>Productos</h2>
-      <ul className="productos">
-        {lineas.map((linea) => {
-          const cantidad = cantidades[linea.id] ?? 0;
-          return (
-            <li key={linea.id} aria-label={linea.nombre}>
-              <div className="prod-info">
-                <span className="prod-nombre">{linea.nombre}</span>
-                <span className="prod-precio">{formatearPesos(linea.precio)}</span>
-              </div>
-              <div className="stepper">
-                <button type="button" onClick={() => cambiarCantidad(linea.id, -1)}>−</button>
-                <span className="cant">{cantidad}</span>
-                <button type="button" onClick={() => cambiarCantidad(linea.id, 1)}>+</button>
-              </div>
-              <span className="prod-subtotal">{formatearPesos(linea.precio * cantidad)}</span>
-            </li>
-          );
-        })}
-      </ul>
+      {lineas.length === 0 ? (
+        <p className="venta-vacia">Este evento aún no tiene productos. Agrégalos en “Líneas”.</p>
+      ) : (
+        <ul className="venta-lista">
+          {lineas.map((linea) => {
+            const cantidad = cantidades[linea.id] ?? 0;
+            return (
+              <li key={linea.id} aria-label={linea.nombre} className={`sel-fila${cantidad > 0 ? " activo" : ""}`}>
+                <div className="prod-emoji">🛍️</div>
+                <div className="sel-info">
+                  <div className="sel-nombre">{linea.nombre}</div>
+                  <div className="sel-precio">{formatearPesos(linea.precio)}</div>
+                </div>
+                <div className="stepper">
+                  <button type="button" onClick={() => cambiarCantidad(linea.id, -1)}>−</button>
+                  <span className="cant">{cantidad}</span>
+                  <button type="button" onClick={() => cambiarCantidad(linea.id, 1)}>+</button>
+                </div>
+                <span className="sel-subtotal">{formatearPesos(linea.precio * cantidad)}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       {descuentos.length > 0 && (
         <>
           <h2>Descuentos</h2>
-          {descuentos.map((d) => (
-            <label key={d.id}>
-              <input
-                type="radio"
-                name="descuento"
-                checked={descuentoId === d.id}
-                onChange={() => setDescuentoId(descuentoId === d.id ? null : d.id)}
-              />
-              {d.nombre}
-            </label>
-          ))}
+          <div className="chips">
+            {descuentos.map((d) => (
+              <label key={d.id}>
+                <input
+                  type="radio"
+                  name="descuento"
+                  checked={descuentoId === d.id}
+                  onChange={() => setDescuentoId(descuentoId === d.id ? null : d.id)}
+                />
+                {d.nombre}
+              </label>
+            ))}
+          </div>
         </>
       )}
 
       <h2>Método de pago</h2>
-      {metodos.map((m) => (
-        <label key={m.id}>
-          <input type="radio" name="metodo" checked={metodoId === m.id} onChange={() => setMetodoId(m.id)} />
-          {m.nombre}
-        </label>
-      ))}
+      <div className="chips">
+        {metodos.map((m) => (
+          <label key={m.id}>
+            <input type="radio" name="metodo" checked={metodoId === m.id} onChange={() => setMetodoId(m.id)} />
+            {m.nombre}
+          </label>
+        ))}
+      </div>
 
-      <h2>Cobro</h2>
       <div className="cobro">
-        <div className="cobro-fila total">
-          <span>Total</span>
+        <div className="cobro-total">
+          <span>Total a cobrar</span>
           <strong>{formatearPesos(calculo.total)}</strong>
         </div>
-        <button type="button" onClick={() => setRecibido(calculo.total)}>Pago exacto</button>
-        <label>
-          Recibido
-          <input
-            type="number"
-            min={0}
-            step={1}
-            value={recibido || ""}
-            onChange={(e) => setRecibido(Math.max(0, Math.trunc(Number(e.target.value))))}
-          />
-        </label>
-        <div className="cobro-fila">
+        <div className="cobro-pago">
+          <label>
+            Recibido
+            <input
+              type="number"
+              min={0}
+              step={1}
+              value={recibido || ""}
+              onChange={(e) => setRecibido(Math.max(0, Math.trunc(Number(e.target.value))))}
+            />
+          </label>
+          <button type="button" onClick={() => setRecibido(calculo.total)}>Pago exacto</button>
+        </div>
+        <div className="cobro-cambio">
           <span>Cambio</span>
           <strong>{formatearPesos(calculo.cambio)}</strong>
         </div>
+        <button type="button" className="principal" onClick={registrar} disabled={calculo.total <= 0}>
+          Registrar venta
+        </button>
       </div>
-
-      <button type="button" className="principal" onClick={registrar} disabled={calculo.total <= 0}>
-        Registrar venta
-      </button>
     </section>
   );
 }

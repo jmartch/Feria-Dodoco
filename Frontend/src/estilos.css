@@ -1,246 +1,177 @@
 /* ==========================================================================
-   Dodoco Store — estilos globales
-   Mobile-first: el uso real es en el celular, en una feria, tocando rápido.
+   Dodoco Store — sistema visual
+   Mobile-first. La estrella es la venta; todo lo demás la acompaña, elegante.
    ========================================================================== */
 
 :root {
-  --rosa: #ec4899;
-  --rosa-oscuro: #db2777;
-  --rosa-suave: #fce7f3;
-  --tinta: #1f2937;
-  --gris: #6b7280;
-  --gris-claro: #e5e7eb;
-  --fondo: #f7f5f8;
+  --rosa: #e8489b;
+  --rosa-oscuro: #c92d80;
+  --rosa-suave: #fdeaf4;
+  --rosa-borde: #f7cbe1;
+  --tinta: #241b28;
+  --gris: #7a7480;
+  --gris-claro: #ece7ee;
+  --linea: #efe9f1;
+  --fondo: #faf6f9;
   --tarjeta: #ffffff;
-  --ok: #16a34a;
-  --alerta: #dc2626;
-  --alerta-fondo: #fef2f2;
-  --radio: 14px;
-  --sombra: 0 1px 3px rgba(17, 24, 39, 0.08), 0 6px 20px rgba(17, 24, 39, 0.06);
-  --alto-toque: 48px;
+  --ok: #14a05a;
+  --ok-suave: #e5f6ed;
+  --alerta: #d92d54;
+  --alerta-fondo: #fdeef1;
+  --radio: 18px;
+  --radio-sm: 12px;
+  --sombra: 0 1px 2px rgba(36, 27, 40, 0.04), 0 8px 24px rgba(36, 27, 40, 0.06);
+  --sombra-suave: 0 1px 2px rgba(36, 27, 40, 0.04), 0 4px 12px rgba(36, 27, 40, 0.05);
+  --alto-toque: 50px;
+  --ancho: 680px;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html {
-  -webkit-text-size-adjust: 100%;
-}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
-  font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   color: var(--tinta);
   background: var(--fondo);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* ---- Estructura general -------------------------------------------------- */
+/* ---- Estructura --------------------------------------------------------- */
 
 main {
-  max-width: 640px;
+  max-width: var(--ancho);
   margin: 0 auto;
-  padding: 16px 16px 96px;
+  padding: 20px 16px 120px;
 }
 
-section {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
+section { display: flex; flex-direction: column; gap: 18px; }
 
-h1 {
-  font-size: 1.6rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  margin: 4px 0 8px;
-}
+h1 { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.03em; margin: 2px 0 6px; }
 
 h2 {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--tinta);
-  margin: 8px 0 2px;
-}
-
-h3 {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--gris);
-  margin: 4px 0 0;
+  margin: 6px 0 -2px;
 }
 
-p {
-  margin: 0;
-}
+h3 { font-size: 0.95rem; font-weight: 700; margin: 0; }
+p { margin: 0; }
 
-a {
-  color: var(--rosa-oscuro);
-  font-weight: 600;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
+a { color: var(--rosa-oscuro); font-weight: 600; text-decoration: none; }
+a:hover { text-decoration: underline; }
 
-/* ---- Formularios (login, registro) como tarjeta centrada ----------------- */
+/* ---- Formularios (login, registro) -------------------------------------- */
 
 form {
-  max-width: 420px;
-  margin: 8vh auto 0;
-  padding: 28px 22px;
+  max-width: 400px;
+  margin: 7vh auto 0;
+  padding: 30px 24px;
   background: var(--tarjeta);
-  border-radius: 20px;
+  border: 1px solid var(--linea);
+  border-radius: 22px;
   box-shadow: var(--sombra);
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
+main form { margin: 0; max-width: 100%; box-shadow: var(--sombra-suave); }
+form h1 { text-align: center; margin: 0; }
 
-/* Dentro de una pantalla protegida (con nav), el formulario no se centra tanto */
-main form {
-  margin: 8px 0;
-}
+label { display: flex; flex-direction: column; gap: 7px; font-size: 0.82rem; font-weight: 700; color: var(--gris); }
 
-form h1 {
-  text-align: center;
-  margin: 0;
-}
-
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--gris);
-}
-
-input {
+input, select {
   font: inherit;
+  font-weight: 500;
   color: var(--tinta);
   background: #fff;
   border: 1.5px solid var(--gris-claro);
-  border-radius: 12px;
+  border-radius: var(--radio-sm);
   padding: 0 14px;
   height: var(--alto-toque);
   width: 100%;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-input:focus {
-  outline: none;
-  border-color: var(--rosa);
-  box-shadow: 0 0 0 4px var(--rosa-suave);
-}
+input:focus, select:focus { outline: none; border-color: var(--rosa); box-shadow: 0 0 0 4px var(--rosa-suave); }
 
-/* ---- Botones ------------------------------------------------------------- */
+/* ---- Botones ------------------------------------------------------------ */
 
 button {
   font: inherit;
   font-weight: 700;
   cursor: pointer;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radio-sm);
   min-height: var(--alto-toque);
-  padding: 0 18px;
+  padding: 0 20px;
   background: var(--rosa);
   color: #fff;
-  transition: background 0.15s, transform 0.05s;
+  transition: background 0.15s, transform 0.06s, box-shadow 0.15s;
 }
-button:hover {
-  background: var(--rosa-oscuro);
-}
-button:active {
-  transform: translateY(1px);
-}
-button:disabled {
-  background: var(--gris-claro);
-  color: var(--gris);
-  cursor: not-allowed;
-}
+button:hover { background: var(--rosa-oscuro); }
+button:active { transform: translateY(1px); }
+button:disabled { background: var(--gris-claro); color: var(--gris); cursor: not-allowed; }
 
-/* Botón secundario: los que no son la acción principal */
-button[type="button"] {
-  background: #fff;
-  color: var(--tinta);
-  border: 1.5px solid var(--gris-claro);
-}
-button[type="button"]:hover {
-  background: var(--rosa-suave);
-  border-color: var(--rosa);
-  color: var(--rosa-oscuro);
-}
+button[type="button"] { background: #fff; color: var(--tinta); border: 1.5px solid var(--gris-claro); }
+button[type="button"]:hover { background: var(--rosa-suave); border-color: var(--rosa-borde); color: var(--rosa-oscuro); }
 
-/* ---- Navegación superior ------------------------------------------------- */
+button.principal, button.principal[type="button"] {
+  background: var(--rosa);
+  color: #fff;
+  border: none;
+  min-height: 58px;
+  font-size: 1.05rem;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(232, 72, 155, 0.28);
+}
+button.principal:hover { background: var(--rosa-oscuro); }
+button.principal:disabled { background: var(--gris-claro); color: var(--gris); box-shadow: none; }
+
+/* ---- Navegación superior ------------------------------------------------ */
 
 nav {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
   display: flex;
   align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  padding: 12px 16px;
-  background: var(--tarjeta);
-  border-bottom: 1px solid var(--gris-claro);
-  box-shadow: 0 1px 6px rgba(17, 24, 39, 0.04);
+  gap: 6px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: saturate(180%) blur(10px);
+  border-bottom: 1px solid var(--linea);
 }
-nav a {
-  color: var(--gris);
-  font-weight: 700;
-  padding: 6px 4px;
-}
-nav a:hover {
-  color: var(--rosa-oscuro);
-  text-decoration: none;
-}
-nav span {
-  margin-left: auto;
-  font-weight: 700;
-  color: var(--tinta);
-}
-nav button {
-  min-height: 38px;
-  padding: 0 14px;
-}
+.nav-marca { display: inline-flex; align-items: center; padding: 0; margin-right: 6px; }
+.nav-marca img { height: 30px; width: auto; display: block; }
+nav a { color: var(--gris); font-weight: 700; font-size: 0.9rem; padding: 8px 12px; border-radius: 10px; }
+nav a:hover { color: var(--rosa-oscuro); background: var(--rosa-suave); text-decoration: none; }
+nav span { margin-left: auto; font-weight: 700; font-size: 0.9rem; color: var(--tinta); }
+nav button { min-height: 38px; padding: 0 14px; font-size: 0.85rem; }
 
-/* ---- Listas (eventos, líneas, catálogo, métodos) ------------------------- */
+/* ---- Listas genéricas (catálogo, líneas, métodos) ----------------------- */
 
-ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
+ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 li {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
   background: var(--tarjeta);
-  border: 1px solid var(--gris-claro);
+  border: 1px solid var(--linea);
   border-radius: var(--radio);
   padding: 14px 16px;
-  box-shadow: var(--sombra);
+  box-shadow: var(--sombra-suave);
   font-weight: 600;
 }
-li a {
-  font-size: 1.05rem;
-}
-/* El botón dentro de una fila (Borrar, Quitar) se va a la derecha */
-li button {
-  margin-left: auto;
-  min-height: 38px;
-  padding: 0 14px;
-}
+li a { font-size: 1.05rem; font-weight: 700; }
+li button { margin-left: auto; min-height: 40px; padding: 0 14px; }
 
-/* ---- Radios de descuento y método de pago -------------------------------- */
+/* ---- Radios (descuento / método de pago) como chips --------------------- */
 
 label:has(input[type="radio"]) {
   flex-direction: row;
@@ -248,301 +179,259 @@ label:has(input[type="radio"]) {
   gap: 10px;
   background: var(--tarjeta);
   border: 1.5px solid var(--gris-claro);
-  border-radius: 12px;
+  border-radius: var(--radio-sm);
   padding: 12px 16px;
   min-height: var(--alto-toque);
-  font-size: 1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
   color: var(--tinta);
   cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
 }
 label:has(input[type="radio"]:checked) {
   border-color: var(--rosa);
   background: var(--rosa-suave);
   color: var(--rosa-oscuro);
+  box-shadow: 0 0 0 3px var(--rosa-suave);
 }
-input[type="radio"] {
-  width: 22px;
-  height: 22px;
-  accent-color: var(--rosa);
-  flex: 0 0 auto;
-  padding: 0;
-}
+input[type="radio"] { width: 20px; height: 20px; accent-color: var(--rosa); flex: 0 0 auto; padding: 0; }
 
-/* ---- Avisos y estados ---------------------------------------------------- */
+/* ---- Avisos y estados --------------------------------------------------- */
 
 [role="alert"] {
   background: var(--alerta-fondo);
   color: var(--alerta);
-  border: 1px solid #fecaca;
-  border-radius: 12px;
+  border: 1px solid #f6c9d3;
+  border-radius: var(--radio-sm);
   padding: 12px 14px;
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
+}
+[role="status"] { color: var(--gris); font-weight: 600; font-size: 0.9rem; }
+
+.pendientes {
+  background: #fff5e6;
+  color: #b26a00;
+  border: 1px solid #ffe0ad;
+  border-radius: var(--radio-sm);
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: 0.85rem;
 }
 
-[role="status"] {
-  color: var(--gris);
-  font-weight: 600;
-  font-size: 0.92rem;
-}
+/* ---- Marca en login ----------------------------------------------------- */
 
-/* ---- Pantalla de Vender: calculadora táctil ------------------------------ */
+.marca { display: block; width: 170px; max-width: 60%; height: auto; margin: 0 auto 6px; }
 
-ul.productos li {
-  gap: 12px;
-}
-ul.productos li button {
-  margin-left: 0; /* anula el margin-left:auto de las filas normales */
-}
+/* ==========================================================================
+   VENDER — punto de venta
+   ========================================================================== */
 
-.prod-info {
+.venta-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.tile {
+  position: relative;
+  text-align: left;
+  background: var(--tarjeta);
+  border: 1.5px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 14px;
+  min-height: 116px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  flex: 1 1 auto;
-  min-width: 120px;
+  gap: 8px;
+  box-shadow: var(--sombra-suave);
+  cursor: pointer;
+  transition: border-color 0.12s, transform 0.06s, box-shadow 0.12s;
 }
-.prod-nombre {
-  font-weight: 700;
-  font-size: 1.05rem;
-}
-.prod-precio {
-  color: var(--gris);
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.stepper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.stepper button {
-  width: 44px;
-  height: 44px;
-  min-height: 44px;
-  padding: 0;
-  border-radius: 50%;
-  font-size: 1.4rem;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.tile:hover { border-color: var(--rosa-borde); }
+.tile.activo { border-color: var(--rosa); box-shadow: 0 0 0 3px var(--rosa-suave); }
+.tile-icono {
+  width: 40px; height: 40px;
+  border-radius: 12px;
   background: var(--rosa-suave);
-  border: 1.5px solid transparent;
   color: var(--rosa-oscuro);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; font-weight: 800;
 }
-.stepper button:hover {
+.tile-nombre { font-weight: 700; font-size: 0.95rem; line-height: 1.25; }
+.tile-precio { color: var(--gris); font-weight: 700; font-size: 0.85rem; margin-top: auto; }
+.tile-cant {
+  position: absolute;
+  top: 10px; right: 10px;
+  min-width: 26px; height: 26px;
+  padding: 0 7px;
+  border-radius: 999px;
   background: var(--rosa);
   color: #fff;
-}
-.stepper .cant {
-  min-width: 34px;
-  text-align: center;
-  font-weight: 800;
-  font-size: 1.15rem;
+  font-size: 0.85rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
 }
 
-.prod-subtotal {
-  min-width: 88px;
-  text-align: right;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
+.venta-sel { display: flex; flex-direction: column; gap: 8px; }
+.sel-fila {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--tarjeta);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-sm);
+  padding: 10px 14px;
 }
-
-/* ---- Bloque de cobro ----------------------------------------------------- */
+.sel-info { flex: 1 1 auto; min-width: 0; }
+.sel-nombre { font-weight: 700; font-size: 0.92rem; }
+.sel-precio { color: var(--gris); font-size: 0.8rem; font-weight: 600; }
+.stepper { display: flex; align-items: center; gap: 6px; }
+.stepper button {
+  width: 40px; height: 40px; min-height: 40px; padding: 0;
+  border-radius: 50%; font-size: 1.3rem; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--rosa-suave); border: none; color: var(--rosa-oscuro);
+}
+.stepper button:hover { background: var(--rosa); color: #fff; }
+.stepper .cant { min-width: 28px; text-align: center; font-weight: 800; font-size: 1.05rem; }
+.sel-subtotal { min-width: 84px; text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
 
 .cobro {
+  position: sticky;
+  bottom: 0;
+  margin: 8px -16px -120px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: saturate(180%) blur(10px);
+  border-top: 1px solid var(--linea);
+  box-shadow: 0 -6px 24px rgba(36, 27, 40, 0.06);
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+.cobro-total { display: flex; align-items: baseline; justify-content: space-between; }
+.cobro-total span { color: var(--gris); font-weight: 700; font-size: 0.9rem; }
+.cobro-total strong { font-size: 1.9rem; font-weight: 800; color: var(--tinta); letter-spacing: -0.02em; }
+.cobro-pago { display: flex; align-items: flex-end; gap: 10px; }
+.cobro-pago label { flex: 1 1 auto; }
+.cobro-pago button { flex: 0 0 auto; white-space: nowrap; }
+.cobro-cambio { display: flex; justify-content: space-between; font-weight: 700; color: var(--gris); font-size: 0.9rem; }
+.cobro-cambio strong { color: var(--ok); }
+
+.venta-vacia { color: var(--gris); text-align: center; padding: 20px; font-weight: 600; }
+
+/* ==========================================================================
+   PANEL — resumen de la feria
+   ========================================================================== */
+
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stat {
   background: var(--tarjeta);
-  border: 1px solid var(--gris-claro);
+  border: 1px solid var(--linea);
   border-radius: var(--radio);
   padding: 16px;
-  box-shadow: var(--sombra);
+  box-shadow: var(--sombra-suave);
+  display: flex; flex-direction: column; gap: 4px;
 }
-.cobro-fila {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-}
-.cobro-fila span {
-  color: var(--gris);
-  font-weight: 600;
-}
-.cobro-fila strong {
-  font-size: 1.2rem;
-  font-variant-numeric: tabular-nums;
-}
-.cobro-fila.total strong {
-  font-size: 1.5rem;
-  color: var(--rosa-oscuro);
-}
-
-/* Botón principal (Registrar venta): grande y rosado aunque sea type=button */
-button.principal {
-  background: var(--rosa);
-  color: #fff;
-  border: none;
-  min-height: 56px;
-  font-size: 1.1rem;
-  border-radius: 14px;
-}
-button.principal:hover {
-  background: var(--rosa-oscuro);
-}
-button.principal:disabled {
-  background: var(--gris-claro);
-  color: var(--gris);
-}
-
-/* ---- Barra de meta (Panel) ----------------------------------------------- */
+.stat-valor { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.stat-etq { font-size: 0.78rem; font-weight: 700; color: var(--gris); text-transform: uppercase; letter-spacing: 0.04em; }
+.stat.destacado { background: linear-gradient(135deg, var(--rosa), var(--rosa-oscuro)); border: none; color: #fff; }
+.stat.destacado .stat-etq { color: rgba(255, 255, 255, 0.85); }
+.stat.admin .stat-valor { color: var(--ok); }
 
 .meta {
   background: var(--tarjeta);
-  border: 1px solid var(--gris-claro);
+  border: 1px solid var(--linea);
   border-radius: var(--radio);
-  padding: 16px;
-  box-shadow: var(--sombra);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  padding: 18px;
+  box-shadow: var(--sombra-suave);
+  display: flex; flex-direction: column; gap: 12px;
 }
-.meta-pista {
-  width: 100%;
-  height: 18px;
-  background: var(--gris-claro);
-  border-radius: 999px;
-  overflow: hidden;
-}
-.meta-relleno {
-  height: 100%;
-  background: linear-gradient(90deg, var(--rosa), var(--rosa-oscuro));
-  border-radius: 999px;
-  transition: width 0.4s ease;
-}
-.meta-texto {
-  font-size: 0.95rem;
-  color: var(--gris);
-}
-.meta-texto strong {
-  color: var(--tinta);
-  font-size: 1.1rem;
-}
+.meta-encabezado { display: flex; align-items: baseline; justify-content: space-between; }
+.meta-encabezado strong { font-size: 1.15rem; }
+.meta-encabezado span { color: var(--gris); font-weight: 700; font-size: 0.85rem; }
+.meta-pista { width: 100%; height: 16px; background: var(--gris-claro); border-radius: 999px; overflow: hidden; }
+.meta-relleno { height: 100%; background: linear-gradient(90deg, var(--rosa), var(--rosa-oscuro)); border-radius: 999px; transition: width 0.5s ease; }
+.meta-texto { font-size: 0.85rem; color: var(--gris); font-weight: 600; }
+.meta-texto strong { color: var(--tinta); }
 
-/* ---- Logo / marca -------------------------------------------------------- */
+.metodos-grid { display: flex; flex-direction: column; gap: 10px; }
+.metodo-fila {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--tarjeta); border: 1px solid var(--linea);
+  border-radius: var(--radio-sm); padding: 14px 16px;
+  box-shadow: var(--sombra-suave);
+}
+.metodo-fila span { font-weight: 700; }
+.metodo-fila strong { font-variant-numeric: tabular-nums; font-size: 1.05rem; }
 
-.marca {
-  display: block;
-  width: 180px;
-  max-width: 60%;
-  height: auto;
-  margin: 0 auto 4px;
-}
+/* ==========================================================================
+   EVENTOS — lista primero, calendario y creación como apoyo
+   ========================================================================== */
 
-.nav-marca {
-  display: inline-flex;
-  align-items: center;
-  padding: 0;
-  margin-right: 4px;
-}
-.nav-marca img {
-  height: 30px;
-  width: auto;
-  display: block;
-}
+.eventos-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.eventos-cab h1 { margin: 0; }
+.eventos-cab button { min-height: 42px; }
 
-/* ---- Calendario de eventos ----------------------------------------------- */
+.evento-card {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--tarjeta); border: 1px solid var(--linea);
+  border-radius: var(--radio); padding: 16px;
+  box-shadow: var(--sombra-suave);
+  text-decoration: none; color: inherit;
+  transition: border-color 0.12s, transform 0.06s;
+}
+.evento-card:hover { border-color: var(--rosa-borde); text-decoration: none; }
+.evento-emoji {
+  width: 46px; height: 46px; flex: 0 0 auto;
+  border-radius: 14px; background: var(--rosa-suave);
+  display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+}
+.evento-cuerpo { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.evento-nombre { font-weight: 800; font-size: 1.05rem; }
+.evento-fecha { font-size: 0.82rem; color: var(--gris); font-weight: 600; text-transform: capitalize; }
+.evento-acciones { display: flex; gap: 8px; flex: 0 0 auto; }
+.evento-chip {
+  font-size: 0.8rem; font-weight: 700; padding: 8px 12px;
+  border-radius: 999px; border: 1.5px solid var(--gris-claro); color: var(--gris);
+}
+.evento-chip:hover { border-color: var(--rosa); color: var(--rosa-oscuro); background: var(--rosa-suave); text-decoration: none; }
+.evento-chip.vender { background: var(--rosa); border-color: var(--rosa); color: #fff; }
+.evento-chip.vender:hover { background: var(--rosa-oscuro); color: #fff; }
 
-.cal {
-  background: var(--tarjeta);
-  border: 1px solid var(--gris-claro);
-  border-radius: var(--radio);
-  padding: 14px;
-  box-shadow: var(--sombra);
+.lista-eventos { display: flex; flex-direction: column; gap: 12px; }
+.vacio { color: var(--gris); text-align: center; padding: 28px 16px; font-weight: 600; }
+
+form.form-evento { max-width: 100%; margin: 0; padding: 18px; border-radius: var(--radio); }
+
+.plegable { border: 1px solid var(--linea); border-radius: var(--radio); background: var(--tarjeta); box-shadow: var(--sombra-suave); overflow: hidden; }
+.plegable-cab {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  background: transparent; color: var(--tinta); border: none; border-radius: 0;
+  padding: 14px 16px; font-weight: 700; min-height: auto;
 }
-.cal-cabecera {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-.cal-cabecera strong {
-  font-size: 1.05rem;
-}
-.cal-cabecera button {
-  width: 40px;
-  height: 40px;
-  min-height: 40px;
-  padding: 0;
-  border-radius: 10px;
-  font-size: 1.3rem;
-  line-height: 1;
-}
-.cal-rejilla {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-}
-.cal-nombre-dia {
-  text-align: center;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--gris);
-  padding: 4px 0;
-}
+.plegable-cab:hover { background: var(--rosa-suave); color: var(--rosa-oscuro); }
+.plegable-cuerpo { padding: 0 14px 14px; }
+
+/* ---- Calendario --------------------------------------------------------- */
+
+.cal-cabecera { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.cal-cabecera strong { font-size: 1rem; text-transform: capitalize; }
+.cal-cabecera button { width: 38px; height: 38px; min-height: 38px; padding: 0; border-radius: 10px; font-size: 1.2rem; line-height: 1; }
+.cal-rejilla { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-nombre-dia { text-align: center; font-size: 0.68rem; font-weight: 800; color: var(--gris); padding: 4px 0; text-transform: uppercase; }
 .cal-celda {
-  position: relative;
-  aspect-ratio: 1 / 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.85rem;
-  font-weight: 600;
-  border-radius: 10px;
-  color: var(--tinta);
+  position: relative; aspect-ratio: 1 / 1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; font-weight: 600; border-radius: 10px; color: var(--tinta);
 }
-.cal-celda.vacia {
-  background: transparent;
-}
-.cal-celda.con-evento {
-  background: var(--rosa-suave);
-  color: var(--rosa-oscuro);
-  font-weight: 800;
-}
-.cal-punto {
-  position: absolute;
-  bottom: 5px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--rosa);
-}
+.cal-celda.vacia { background: transparent; }
+.cal-celda.con-evento { background: var(--rosa-suave); color: var(--rosa-oscuro); font-weight: 800; }
+.cal-punto { position: absolute; bottom: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--rosa); }
 
-/* ---- Formulario de crear evento (ancho completo, no la tarjeta angosta) --- */
+/* ---- Vender: extras ----------------------------------------------------- */
 
-form.form-evento {
-  max-width: 100%;
-  margin: 0;
-  padding: 16px;
-  border-radius: var(--radio);
+.venta-lista { display: flex; flex-direction: column; gap: 10px; }
+.sel-fila { flex-wrap: nowrap; box-shadow: var(--sombra-suave); }
+.sel-fila.activo { border-color: var(--rosa-borde); background: var(--rosa-suave); }
+.sel-info { min-width: 0; }
+.prod-emoji {
+  width: 42px; height: 42px; flex: 0 0 auto;
+  border-radius: 12px; background: var(--rosa-suave);
+  display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
 }
-
-/* ---- Fila de evento en la lista ------------------------------------------ */
-
-.evento-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1 1 auto;
-}
-.evento-fecha {
-  font-size: 0.82rem;
-  color: var(--gris);
-  font-weight: 600;
-  text-transform: capitalize;
-}
-.evento-panel {
-  margin-left: auto;
-}
+.chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.chips label { flex: 1 1 140px; }

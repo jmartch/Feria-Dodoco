@@ -24,30 +24,53 @@ export function Panel() {
   if (!totales) return <Cargando que="el panel" />;
 
   const esAdmin = usuario?.rol === "ADMIN";
+  const muestraNeto = esAdmin && totales.comisiones !== undefined && totales.neto !== undefined;
 
   return (
     <section>
       <h1>Panel</h1>
 
-      <h2>Meta</h2>
+      {pendientes > 0 && <p className="pendientes">⚠ {pendientes} ventas sin sincronizar</p>}
+
+      <h2>Progreso de la meta</h2>
       <BarraMeta bruto={totales.bruto} meta={totales.meta} />
-      {pendientes > 0 && <p role="status">{pendientes} ventas sin sincronizar</p>}
+
+      <h2>Resumen</h2>
+      <div className="stats">
+        <div className="stat destacado">
+          <span className="stat-valor">{formatearPesos(totales.bruto)}</span>
+          <span className="stat-etq">Vendido</span>
+        </div>
+        <div className="stat">
+          <span className="stat-valor">{totales.cantidadVentas}</span>
+          <span className="stat-etq">Ventas</span>
+        </div>
+        {muestraNeto && (
+          <>
+            <div className="stat admin">
+              <span className="stat-valor">{formatearPesos(totales.neto as number)}</span>
+              <span className="stat-etq">Neto</span>
+            </div>
+            <div className="stat">
+              <span className="stat-valor">{formatearPesos(totales.comisiones as number)}</span>
+              <span className="stat-etq">Comisiones</span>
+            </div>
+          </>
+        )}
+      </div>
 
       <h2>Por método de pago</h2>
-      <ul>
-        {totales.porMetodo.map((m) => (
-          <li key={m.metodo}>
-            {m.metodo}: {formatearPesos(m.total)}
-          </li>
-        ))}
-      </ul>
-
-      {esAdmin && totales.comisiones !== undefined && totales.neto !== undefined && (
-        <>
-          <h2>Solo administración</h2>
-          <p>Comisiones: {formatearPesos(totales.comisiones)}</p>
-          <p>Neto tras comisiones: {formatearPesos(totales.neto)}</p>
-        </>
+      {totales.porMetodo.length === 0 ? (
+        <p className="vacio">Aún no hay ventas registradas.</p>
+      ) : (
+        <div className="metodos-grid">
+          {totales.porMetodo.map((m) => (
+            <div className="metodo-fila" key={m.metodo}>
+              <span>{m.metodo}</span>
+              <strong>{formatearPesos(m.total)}</strong>
+            </div>
+          ))}
+        </div>
       )}
     </section>
   );
