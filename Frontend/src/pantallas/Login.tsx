@@ -28,6 +28,7 @@ export function Login() {
 
   return (
     <form onSubmit={enviar}>
+      <img className="marca" src="/logo.png" alt="Dodoco Store" />
       <h1>Entrar</h1>
       {error && <Aviso mensaje={error} />}
       <label>

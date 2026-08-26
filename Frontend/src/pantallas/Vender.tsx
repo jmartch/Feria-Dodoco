@@ -86,16 +86,21 @@ export function Vender() {
       <h1>Vender</h1>
 
       <h2>Productos</h2>
-      <ul>
+      <ul className="productos">
         {lineas.map((linea) => {
           const cantidad = cantidades[linea.id] ?? 0;
           return (
             <li key={linea.id} aria-label={linea.nombre}>
-              <span>{linea.nombre}</span> <span>{formatearPesos(linea.precio)}</span>
-              <button type="button" onClick={() => cambiarCantidad(linea.id, -1)}>−</button>
-              <span>{cantidad}</span>
-              <button type="button" onClick={() => cambiarCantidad(linea.id, 1)}>+</button>
-              <span>{formatearPesos(linea.precio * cantidad)}</span>
+              <div className="prod-info">
+                <span className="prod-nombre">{linea.nombre}</span>
+                <span className="prod-precio">{formatearPesos(linea.precio)}</span>
+              </div>
+              <div className="stepper">
+                <button type="button" onClick={() => cambiarCantidad(linea.id, -1)}>−</button>
+                <span className="cant">{cantidad}</span>
+                <button type="button" onClick={() => cambiarCantidad(linea.id, 1)}>+</button>
+              </div>
+              <span className="prod-subtotal">{formatearPesos(linea.precio * cantidad)}</span>
             </li>
           );
         })}
@@ -127,21 +132,31 @@ export function Vender() {
       ))}
 
       <h2>Cobro</h2>
-      <p>Total: {formatearPesos(calculo.total)}</p>
-      <button type="button" onClick={() => setRecibido(calculo.total)}>Pago exacto</button>
-      <label>
-        Recibido
-        <input
-          type="number"
-          min={0}
-          step={1}
-          value={recibido || ""}
-          onChange={(e) => setRecibido(Math.max(0, Math.trunc(Number(e.target.value))))}
-        />
-      </label>
-      <p>Cambio: {formatearPesos(calculo.cambio)}</p>
+      <div className="cobro">
+        <div className="cobro-fila total">
+          <span>Total</span>
+          <strong>{formatearPesos(calculo.total)}</strong>
+        </div>
+        <button type="button" onClick={() => setRecibido(calculo.total)}>Pago exacto</button>
+        <label>
+          Recibido
+          <input
+            type="number"
+            min={0}
+            step={1}
+            value={recibido || ""}
+            onChange={(e) => setRecibido(Math.max(0, Math.trunc(Number(e.target.value))))}
+          />
+        </label>
+        <div className="cobro-fila">
+          <span>Cambio</span>
+          <strong>{formatearPesos(calculo.cambio)}</strong>
+        </div>
+      </div>
 
-      <button type="button" onClick={registrar} disabled={calculo.total <= 0}>Registrar venta</button>
+      <button type="button" className="principal" onClick={registrar} disabled={calculo.total <= 0}>
+        Registrar venta
+      </button>
     </section>
   );
 }

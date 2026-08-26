@@ -1,0 +1,454 @@
+/* ==========================================================================
+   Dodoco Store — estilos globales
+   Mobile-first: el uso real es en el celular, en una feria, tocando rápido.
+   ========================================================================== */
+
+:root {
+  --rosa: #ec4899;
+  --rosa-oscuro: #db2777;
+  --rosa-suave: #fce7f3;
+  --tinta: #1f2937;
+  --gris: #6b7280;
+  --gris-claro: #e5e7eb;
+  --fondo: #f7f5f8;
+  --tarjeta: #ffffff;
+  --ok: #16a34a;
+  --alerta: #dc2626;
+  --alerta-fondo: #fef2f2;
+  --radio: 14px;
+  --sombra: 0 1px 3px rgba(17, 24, 39, 0.08), 0 6px 20px rgba(17, 24, 39, 0.06);
+  --alto-toque: 48px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--tinta);
+  background: var(--fondo);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Estructura general -------------------------------------------------- */
+
+main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 16px 96px;
+}
+
+section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 4px 0 8px;
+}
+
+h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--tinta);
+  margin: 8px 0 2px;
+}
+
+h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gris);
+  margin: 4px 0 0;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--rosa-oscuro);
+  font-weight: 600;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* ---- Formularios (login, registro) como tarjeta centrada ----------------- */
+
+form {
+  max-width: 420px;
+  margin: 8vh auto 0;
+  padding: 28px 22px;
+  background: var(--tarjeta);
+  border-radius: 20px;
+  box-shadow: var(--sombra);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Dentro de una pantalla protegida (con nav), el formulario no se centra tanto */
+main form {
+  margin: 8px 0;
+}
+
+form h1 {
+  text-align: center;
+  margin: 0;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gris);
+}
+
+input {
+  font: inherit;
+  color: var(--tinta);
+  background: #fff;
+  border: 1.5px solid var(--gris-claro);
+  border-radius: 12px;
+  padding: 0 14px;
+  height: var(--alto-toque);
+  width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+input:focus {
+  outline: none;
+  border-color: var(--rosa);
+  box-shadow: 0 0 0 4px var(--rosa-suave);
+}
+
+/* ---- Botones ------------------------------------------------------------- */
+
+button {
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  border-radius: 12px;
+  min-height: var(--alto-toque);
+  padding: 0 18px;
+  background: var(--rosa);
+  color: #fff;
+  transition: background 0.15s, transform 0.05s;
+}
+button:hover {
+  background: var(--rosa-oscuro);
+}
+button:active {
+  transform: translateY(1px);
+}
+button:disabled {
+  background: var(--gris-claro);
+  color: var(--gris);
+  cursor: not-allowed;
+}
+
+/* Botón secundario: los que no son la acción principal */
+button[type="button"] {
+  background: #fff;
+  color: var(--tinta);
+  border: 1.5px solid var(--gris-claro);
+}
+button[type="button"]:hover {
+  background: var(--rosa-suave);
+  border-color: var(--rosa);
+  color: var(--rosa-oscuro);
+}
+
+/* ---- Navegación superior ------------------------------------------------- */
+
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--tarjeta);
+  border-bottom: 1px solid var(--gris-claro);
+  box-shadow: 0 1px 6px rgba(17, 24, 39, 0.04);
+}
+nav a {
+  color: var(--gris);
+  font-weight: 700;
+  padding: 6px 4px;
+}
+nav a:hover {
+  color: var(--rosa-oscuro);
+  text-decoration: none;
+}
+nav span {
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--tinta);
+}
+nav button {
+  min-height: 38px;
+  padding: 0 14px;
+}
+
+/* ---- Listas (eventos, líneas, catálogo, métodos) ------------------------- */
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--tarjeta);
+  border: 1px solid var(--gris-claro);
+  border-radius: var(--radio);
+  padding: 14px 16px;
+  box-shadow: var(--sombra);
+  font-weight: 600;
+}
+li a {
+  font-size: 1.05rem;
+}
+/* El botón dentro de una fila (Borrar, Quitar) se va a la derecha */
+li button {
+  margin-left: auto;
+  min-height: 38px;
+  padding: 0 14px;
+}
+
+/* ---- Radios de descuento y método de pago -------------------------------- */
+
+label:has(input[type="radio"]) {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  background: var(--tarjeta);
+  border: 1.5px solid var(--gris-claro);
+  border-radius: 12px;
+  padding: 12px 16px;
+  min-height: var(--alto-toque);
+  font-size: 1rem;
+  color: var(--tinta);
+  cursor: pointer;
+}
+label:has(input[type="radio"]:checked) {
+  border-color: var(--rosa);
+  background: var(--rosa-suave);
+  color: var(--rosa-oscuro);
+}
+input[type="radio"] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--rosa);
+  flex: 0 0 auto;
+  padding: 0;
+}
+
+/* ---- Avisos y estados ---------------------------------------------------- */
+
+[role="alert"] {
+  background: var(--alerta-fondo);
+  color: var(--alerta);
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+[role="status"] {
+  color: var(--gris);
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+/* ---- Pantalla de Vender: calculadora táctil ------------------------------ */
+
+ul.productos li {
+  gap: 12px;
+}
+ul.productos li button {
+  margin-left: 0; /* anula el margin-left:auto de las filas normales */
+}
+
+.prod-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 120px;
+}
+.prod-nombre {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.prod-precio {
+  color: var(--gris);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stepper button {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.4rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--rosa-suave);
+  border: 1.5px solid transparent;
+  color: var(--rosa-oscuro);
+}
+.stepper button:hover {
+  background: var(--rosa);
+  color: #fff;
+}
+.stepper .cant {
+  min-width: 34px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.15rem;
+}
+
+.prod-subtotal {
+  min-width: 88px;
+  text-align: right;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Bloque de cobro ----------------------------------------------------- */
+
+.cobro {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--tarjeta);
+  border: 1px solid var(--gris-claro);
+  border-radius: var(--radio);
+  padding: 16px;
+  box-shadow: var(--sombra);
+}
+.cobro-fila {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.cobro-fila span {
+  color: var(--gris);
+  font-weight: 600;
+}
+.cobro-fila strong {
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+}
+.cobro-fila.total strong {
+  font-size: 1.5rem;
+  color: var(--rosa-oscuro);
+}
+
+/* Botón principal (Registrar venta): grande y rosado aunque sea type=button */
+button.principal {
+  background: var(--rosa);
+  color: #fff;
+  border: none;
+  min-height: 56px;
+  font-size: 1.1rem;
+  border-radius: 14px;
+}
+button.principal:hover {
+  background: var(--rosa-oscuro);
+}
+button.principal:disabled {
+  background: var(--gris-claro);
+  color: var(--gris);
+}
+
+/* ---- Barra de meta (Panel) ----------------------------------------------- */
+
+.meta {
+  background: var(--tarjeta);
+  border: 1px solid var(--gris-claro);
+  border-radius: var(--radio);
+  padding: 16px;
+  box-shadow: var(--sombra);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.meta-pista {
+  width: 100%;
+  height: 18px;
+  background: var(--gris-claro);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.meta-relleno {
+  height: 100%;
+  background: linear-gradient(90deg, var(--rosa), var(--rosa-oscuro));
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.meta-texto {
+  font-size: 0.95rem;
+  color: var(--gris);
+}
+.meta-texto strong {
+  color: var(--tinta);
+  font-size: 1.1rem;
+}
+
+/* ---- Logo / marca -------------------------------------------------------- */
+
+.marca {
+  display: block;
+  width: 180px;
+  max-width: 60%;
+  height: auto;
+  margin: 0 auto 4px;
+}
+
+.nav-marca {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  margin-right: 4px;
+}
+.nav-marca img {
+  height: 30px;
+  width: auto;
+  display: block;
+}
