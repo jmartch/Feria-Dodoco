@@ -8,7 +8,7 @@ import { crearCola } from "../sync/cola";
 import { calcularVenta } from "../dinero/calculo";
 import { formatearPesos } from "../dinero/formato";
 import { ventasACSV, descargarCSV } from "../dinero/csv";
-import { resumenParaCompartir } from "../dinero/resumen";
+import { mensajeDelDia } from "../dinero/mensaje";
 import type { Descuento, MetodoPago, TotalesEvento, VentaGuardada } from "../api/tipos";
 import { BarraMeta } from "../componentes/BarraMeta";
 import { Cargando } from "../componentes/Cargando";
@@ -103,8 +103,8 @@ export function Vender() {
   }
 
   async function compartir() {
-    if (!totales) return;
-    const texto = resumenParaCompartir(nombreFeria || "la feria", totales);
+    if (ventas.length === 0) return;
+    const texto = mensajeDelDia(nombreFeria || "la feria", ventas);
     try {
       if (navigator.share) {
         await navigator.share({ title: "Resumen de ventas", text: texto });
@@ -129,8 +129,8 @@ export function Vender() {
           <button type="button" onClick={() => setVerResumen((v) => !v)}>
             {verResumen ? "Ocultar resumen" : "Ver resumen"}
           </button>
-          <button type="button" onClick={compartir} disabled={!totales || totales.cantidadVentas === 0}>
-            Compartir resumen
+          <button type="button" onClick={compartir} disabled={ventas.length === 0}>
+            Compartir ventas
           </button>
           <button type="button" onClick={exportar} disabled={ventas.length === 0}>
             Exportar CSV

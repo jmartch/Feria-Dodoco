@@ -58,8 +58,19 @@ export type VentaGuardada = {
   subtotal?: number;
   descuentoNombre?: string | null;
   descuentoValor?: number;
+  comisionPct?: number;
+  comisionValor?: number;
+  neto?: number;
   recibido?: number;
   cambio?: number;
+  items?: VentaItem[];
+};
+
+export type VentaItem = {
+  nombre: string;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
 };
 
 export type TotalesEvento = {

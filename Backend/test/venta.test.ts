@@ -70,6 +70,16 @@ describe("registro de ventas", () => {
     expect(items[0].subtotal).toBe(15000);
   });
 
+  it("listar las ventas del evento incluye el detalle de productos", async () => {
+    await ventaService.registrar(scopeA, "u1", entrada(randomUUID(), qrId));
+
+    const ventas = await ventaRepository.listarDelEvento(scopeA, eventoId);
+
+    expect(ventas).toHaveLength(1);
+    expect(ventas[0].items).toHaveLength(1);
+    expect(ventas[0].items[0]).toMatchObject({ nombre: "Diademas", cantidad: 1, subtotal: 15000 });
+  });
+
   it("reenviar el mismo uuid no duplica la venta", async () => {
     const uuid = randomUUID();
 

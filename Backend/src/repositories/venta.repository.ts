@@ -19,6 +19,15 @@ export type VentaGuardada = {
   creadaEnDispositivo: Date;
 };
 
+export type VentaItemGuardado = {
+  nombre: string;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+};
+
+export type VentaConItems = VentaGuardada & { items: VentaItemGuardado[] };
+
 export type NuevaVenta = Omit<VentaGuardada, "id"> & {
   eventoId: string;
   usuarioId: string;
@@ -114,11 +123,16 @@ export const ventaRepository = {
     }
   },
 
-  async listarDelEvento(scope: Scope, eventoId: string): Promise<VentaGuardada[]> {
+  async listarDelEvento(scope: Scope, eventoId: string): Promise<VentaConItems[]> {
     return prisma.venta.findMany({
       where: { eventoId, emprendimientoId: scope.emprendimientoId },
-      select: campos,
-      orderBy: { creadaEnDispositivo: "desc" },
+      // Incluye el detalle de productos: el CSV y el mensaje del día lo necesitan.
+      select: {
+        ...campos,
+        items: { select: { nombre: true, cantidad: true, precioUnitario: true, subtotal: true } },
+      },
+      // Ascendente por hora: el registro del día se lee de la primera a la última.
+      orderBy: { creadaEnDispositivo: "asc" },
     });
   },
 
