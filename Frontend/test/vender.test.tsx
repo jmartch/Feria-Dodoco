@@ -19,6 +19,9 @@ beforeEach(async () => {
     http.get(`${BASE}/catalogo/categorias`, () =>
       HttpResponse.json([{ id: "l1", nombre: "Pines", precio: 12000 }]),
     ),
+    http.get(`${BASE}/eventos/e1`, () =>
+      HttpResponse.json({ id: "e1", nombre: "Feria", fechaInicio: "2026-04-01T00:00:00Z", fechaFin: null, meta: 1000000, catalogoBloqueado: false, estado: "ACTIVO" }),
+    ),
     http.get(`${BASE}/eventos/e1/descuentos`, () => HttpResponse.json([])),
     http.get(`${BASE}/catalogo/metodos-pago`, () =>
       HttpResponse.json([{ id: "m1", nombre: "Efectivo", comisionPct: 0, activo: true }]),

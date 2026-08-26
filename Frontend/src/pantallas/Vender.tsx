@@ -8,6 +8,7 @@ import { crearCola } from "../sync/cola";
 import { calcularVenta } from "../dinero/calculo";
 import { formatearPesos } from "../dinero/formato";
 import { ventasACSV, descargarCSV } from "../dinero/csv";
+import { resumenParaCompartir } from "../dinero/resumen";
 import type { Descuento, MetodoPago, TotalesEvento, VentaGuardada } from "../api/tipos";
 import { BarraMeta } from "../componentes/BarraMeta";
 import { Cargando } from "../componentes/Cargando";
@@ -28,6 +29,7 @@ export function Vender() {
   const [metodos, setMetodos] = useState<MetodoPago[]>([]);
   const [totales, setTotales] = useState<TotalesEvento | null>(null);
   const [ventas, setVentas] = useState<VentaGuardada[]>([]);
+  const [nombreFeria, setNombreFeria] = useState("");
   const [verResumen, setVerResumen] = useState(false);
 
   const [cantidades, setCantidades] = useState<Record<string, number>>({});
@@ -51,6 +53,7 @@ export function Vender() {
       setMetodos(ms.filter((m) => m.activo));
       if (ms[0]) setMetodoId(ms[0].id);
     });
+    apiEventos.buscar(eventoId).then((e) => setNombreFeria(e.nombre)).catch(() => {});
     refrescarResumen();
   }, [apiCatalogo, apiEventos, eventoId, refrescarResumen]);
 
@@ -99,6 +102,21 @@ export function Vender() {
     descargarCSV(`ventas-${eventoId}.csv`, ventasACSV(ventas));
   }
 
+  async function compartir() {
+    if (!totales) return;
+    const texto = resumenParaCompartir(nombreFeria || "la feria", totales);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Resumen de ventas", text: texto });
+      } else {
+        // Sin compartir nativo (escritorio): se abre WhatsApp con el texto listo.
+        window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank", "noopener");
+      }
+    } catch {
+      // El usuario canceló el diálogo de compartir; no es un error.
+    }
+  }
+
   if (!productos) return <Cargando que="la venta" />;
 
   return (
@@ -110,6 +128,9 @@ export function Vender() {
         <div className="resumen-acciones">
           <button type="button" onClick={() => setVerResumen((v) => !v)}>
             {verResumen ? "Ocultar resumen" : "Ver resumen"}
+          </button>
+          <button type="button" onClick={compartir} disabled={!totales || totales.cantidadVentas === 0}>
+            Compartir resumen
           </button>
           <button type="button" onClick={exportar} disabled={ventas.length === 0}>
             Exportar CSV
