@@ -452,3 +452,97 @@ button.principal:disabled {
   width: auto;
   display: block;
 }
+
+/* ---- Calendario de eventos ----------------------------------------------- */
+
+.cal {
+  background: var(--tarjeta);
+  border: 1px solid var(--gris-claro);
+  border-radius: var(--radio);
+  padding: 14px;
+  box-shadow: var(--sombra);
+}
+.cal-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.cal-cabecera strong {
+  font-size: 1.05rem;
+}
+.cal-cabecera button {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  border-radius: 10px;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+.cal-rejilla {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.cal-nombre-dia {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gris);
+  padding: 4px 0;
+}
+.cal-celda {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 10px;
+  color: var(--tinta);
+}
+.cal-celda.vacia {
+  background: transparent;
+}
+.cal-celda.con-evento {
+  background: var(--rosa-suave);
+  color: var(--rosa-oscuro);
+  font-weight: 800;
+}
+.cal-punto {
+  position: absolute;
+  bottom: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rosa);
+}
+
+/* ---- Formulario de crear evento (ancho completo, no la tarjeta angosta) --- */
+
+form.form-evento {
+  max-width: 100%;
+  margin: 0;
+  padding: 16px;
+  border-radius: var(--radio);
+}
+
+/* ---- Fila de evento en la lista ------------------------------------------ */
+
+.evento-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+}
+.evento-fecha {
+  font-size: 0.82rem;
+  color: var(--gris);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.evento-panel {
+  margin-left: auto;
+}

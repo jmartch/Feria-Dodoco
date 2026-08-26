@@ -41,5 +41,5 @@ it("con sesion de vendedor, configuracion redirige a eventos", async () => {
   await userEvent.type(screen.getByLabelText(/contraseña/i), "clave12345");
   await userEvent.click(screen.getByRole("button", { name: /entrar/i }));
 
-  await waitFor(() => expect(screen.getByRole("heading", { name: /eventos/i })).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole("heading", { level: 1, name: "Eventos" })).toBeInTheDocument());
 });
