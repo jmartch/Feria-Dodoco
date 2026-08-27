@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { ErrorDeNegocio } from "../errors.js";
 import { eventoRepository } from "../repositories/evento.repository.js";
+import { ventaRepository } from "../repositories/venta.repository.js";
 import { eventoService } from "../services/evento.service.js";
 
 const scopeDe = (req: Request) => ({ emprendimientoId: req.auth!.emprendimientoId });
@@ -29,6 +30,32 @@ export const eventoController = {
         meta: req.body.meta,
       });
       res.status(201).json(creado);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /** Reiniciar feria: borra todas las ventas y conserva la configuración. */
+  async reiniciar(req: Request, res: Response, next: NextFunction) {
+    try {
+      const scope = scopeDe(req);
+      const eventoId = String(req.params.id);
+      const evento = await eventoRepository.buscarPorId(scope, eventoId);
+      if (!evento) throw eventoNoEncontrado;
+
+      const borradas = await ventaRepository.eliminarTodasDelEvento(scope, eventoId);
+      res.json({ ventasEliminadas: borradas });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /** Eliminar feria: borra el evento completo (ventas, gastos, líneas, descuentos). */
+  async eliminar(req: Request, res: Response, next: NextFunction) {
+    try {
+      const borrado = await eventoRepository.eliminar(scopeDe(req), String(req.params.id));
+      if (!borrado) throw eventoNoEncontrado;
+      res.status(204).end();
     } catch (error) {
       next(error);
     }

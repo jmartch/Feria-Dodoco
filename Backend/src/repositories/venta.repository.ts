@@ -136,6 +136,25 @@ export const ventaRepository = {
     });
   },
 
+  /**
+   * Borra una venta del evento. Sus `VentaItem` caen por cascada. Devuelve
+   * `false` si la venta no existe o no es de este emprendimiento.
+   */
+  async eliminar(scope: Scope, eventoId: string, ventaId: string): Promise<boolean> {
+    const { count } = await prisma.venta.deleteMany({
+      where: { id: ventaId, eventoId, emprendimientoId: scope.emprendimientoId },
+    });
+    return count === 1;
+  },
+
+  /** Borra todas las ventas del evento (reiniciar feria). Devuelve cuántas borró. */
+  async eliminarTodasDelEvento(scope: Scope, eventoId: string): Promise<number> {
+    const { count } = await prisma.venta.deleteMany({
+      where: { eventoId, emprendimientoId: scope.emprendimientoId },
+    });
+    return count;
+  },
+
   async totalesDelEvento(scope: Scope, eventoId: string): Promise<TotalesEvento> {
     const ventas = await prisma.venta.findMany({
       where: { eventoId, emprendimientoId: scope.emprendimientoId },

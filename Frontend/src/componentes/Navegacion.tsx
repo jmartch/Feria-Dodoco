@@ -5,7 +5,7 @@ export function Navegacion({ usuario, salir }: { usuario: Usuario; salir: () => 
   return (
     <nav>
       <Link to="/eventos" className="nav-marca">
-        <img src="/logo.png" alt="Dodoco Store" />
+        {usuario.nombreEmprendimiento || "Mi tienda"}
       </Link>
       <Link to="/eventos">Eventos</Link>
       {usuario.rol === "ADMIN" && (

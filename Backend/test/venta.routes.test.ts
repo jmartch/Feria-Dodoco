@@ -26,10 +26,8 @@ async function prepararFeria() {
     .set(auth)
     .send({ nombre: "Feria", fechaInicio: new Date().toISOString(), meta: 1000000 });
 
-  const metodos = await request(app)
-    .post("/catalogo/metodos-pago/preajuste-bold")
-    .set(auth)
-    .send({});
+  // Los métodos ya vienen sembrados al registrar la tienda.
+  const metodos = await request(app).get("/catalogo/metodos-pago").set(auth);
 
   const qr = metodos.body.find((m: { nombre: string }) => m.nombre === "QR");
 
@@ -144,6 +142,7 @@ describe("rutas de ventas", () => {
       nombre: "Vendedor",
       rol: "VENDEDOR",
       emprendimientoId: (await prisma.emprendimiento.findFirstOrThrow()).id,
+      nombreEmprendimiento: "Dodoco",
     });
 
     const comoVendedor = await request(app)
@@ -181,6 +180,76 @@ describe("rutas de ventas", () => {
       });
 
     expect(res.status).toBe(404);
+    expect(await prisma.venta.count()).toBe(0);
+  });
+
+  it("borra una venta y desaparece de los totales", async () => {
+    const { auth, eventoId, qrId } = await prepararFeria();
+
+    const venta = await request(app)
+      .post(`/eventos/${eventoId}/ventas`)
+      .set(auth)
+      .send({
+        uuid: randomUUID(),
+        lineas: [{ nombre: "Diademas", precioUnitario: 15000, cantidad: 1 }],
+        metodoPagoId: qrId,
+        descuentoId: null,
+        recibido: 0,
+        creadaEnDispositivo: new Date().toISOString(),
+      });
+
+    const borrada = await request(app)
+      .delete(`/eventos/${eventoId}/ventas/${venta.body.id}`)
+      .set(auth);
+    expect(borrada.status).toBe(204);
+
+    const totales = await request(app).get(`/eventos/${eventoId}/totales`).set(auth);
+    expect(totales.body.bruto).toBe(0);
+    expect(await prisma.venta.count()).toBe(0);
+  });
+
+  it("reiniciar la feria borra las ventas y conserva el evento", async () => {
+    const { auth, eventoId, qrId } = await prepararFeria();
+
+    await request(app)
+      .post(`/eventos/${eventoId}/ventas`)
+      .set(auth)
+      .send({
+        uuid: randomUUID(),
+        lineas: [{ nombre: "Diademas", precioUnitario: 15000, cantidad: 1 }],
+        metodoPagoId: qrId,
+        descuentoId: null,
+        recibido: 0,
+        creadaEnDispositivo: new Date().toISOString(),
+      });
+
+    const res = await request(app).post(`/eventos/${eventoId}/reiniciar`).set(auth).send({});
+    expect(res.status).toBe(200);
+    expect(res.body.ventasEliminadas).toBe(1);
+    expect(await prisma.venta.count()).toBe(0);
+    // El evento sigue existiendo.
+    const evento = await request(app).get(`/eventos/${eventoId}`).set(auth);
+    expect(evento.status).toBe(200);
+  });
+
+  it("eliminar la feria borra el evento y sus ventas", async () => {
+    const { auth, eventoId, qrId } = await prepararFeria();
+
+    await request(app)
+      .post(`/eventos/${eventoId}/ventas`)
+      .set(auth)
+      .send({
+        uuid: randomUUID(),
+        lineas: [{ nombre: "Diademas", precioUnitario: 15000, cantidad: 1 }],
+        metodoPagoId: qrId,
+        descuentoId: null,
+        recibido: 0,
+        creadaEnDispositivo: new Date().toISOString(),
+      });
+
+    const res = await request(app).delete(`/eventos/${eventoId}`).set(auth);
+    expect(res.status).toBe(204);
+    expect(await prisma.evento.count()).toBe(0);
     expect(await prisma.venta.count()).toBe(0);
   });
 });

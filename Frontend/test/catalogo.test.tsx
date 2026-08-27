@@ -32,7 +32,7 @@ it("lista y crea una categoría", async () => {
 
   await userEvent.type(screen.getByLabelText(/nombre/i), "Llaveros");
   await userEvent.type(screen.getByLabelText(/precio/i), "16000");
-  await userEvent.click(screen.getByRole("button", { name: /agregar categoría/i }));
+  await userEvent.click(screen.getByRole("button", { name: /agregar producto/i }));
 
   await waitFor(() => expect(screen.getByText(/Llaveros/)).toBeInTheDocument());
 });

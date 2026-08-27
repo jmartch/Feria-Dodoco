@@ -10,11 +10,24 @@ export type UsuarioSeguro = {
   nombre: string;
   rol: Rol;
   emprendimientoId: string;
+  // Nombre de la tienda: el front lo usa para el saludo personalizado.
+  nombreEmprendimiento: string;
 };
 
 export type UsuarioConHash = UsuarioSeguro & {
   passwordHash: string;
 };
+
+/**
+ * Prisma devuelve el nombre de la tienda anidado en `emprendimiento`. Se aplana
+ * a `nombreEmprendimiento` para que el resto de la app trabaje con un objeto plano.
+ */
+function aplanar<T extends { emprendimiento: { nombre: string } }>(
+  fila: T,
+): Omit<T, "emprendimiento"> & { nombreEmprendimiento: string } {
+  const { emprendimiento, ...resto } = fila;
+  return { ...resto, nombreEmprendimiento: emprendimiento.nombre };
+}
 
 /**
  * Datos de negocio del usuario. NO incluye `emprendimientoId` a propósito:
@@ -35,22 +48,25 @@ const camposSeguros = {
   nombre: true,
   rol: true,
   emprendimientoId: true,
+  emprendimiento: { select: { nombre: true } },
 } as const;
 
 export const usuarioRepository = {
   async listar(scope: Scope): Promise<UsuarioSeguro[]> {
-    return prisma.usuario.findMany({
+    const filas = await prisma.usuario.findMany({
       where: { emprendimientoId: scope.emprendimientoId },
       select: camposSeguros,
       orderBy: { creadoEn: "asc" },
     });
+    return filas.map(aplanar);
   },
 
   async buscarPorId(scope: Scope, id: string): Promise<UsuarioSeguro | null> {
-    return prisma.usuario.findFirst({
+    const fila = await prisma.usuario.findFirst({
       where: { id, emprendimientoId: scope.emprendimientoId },
       select: camposSeguros,
     });
+    return fila && aplanar(fila);
   },
 
   /**
@@ -59,19 +75,21 @@ export const usuarioRepository = {
    * autenticación, nunca un endpoint de negocio.
    */
   async buscarPorEmailGlobal(email: string): Promise<UsuarioConHash | null> {
-    return prisma.usuario.findUnique({
+    const fila = await prisma.usuario.findUnique({
       where: { email },
       select: { ...camposSeguros, passwordHash: true },
     });
+    return fila && aplanar(fila);
   },
 
   /** Excepción documentada: solo para renovar sesión a partir de un refresh token válido. */
   async buscarPorIdGlobal(id: string): Promise<UsuarioSeguro | null> {
-    return prisma.usuario.findUnique({ where: { id }, select: camposSeguros });
+    const fila = await prisma.usuario.findUnique({ where: { id }, select: camposSeguros });
+    return fila && aplanar(fila);
   },
 
   async crear(scope: Scope, datos: NuevoUsuario): Promise<UsuarioSeguro> {
-    return prisma.usuario.create({
+    const fila = await prisma.usuario.create({
       // El spread va primero y los campos controlados después: así ni el id ni
       // el emprendimiento pueden ser sobrescritos por quien llama.
       data: {
@@ -81,6 +99,7 @@ export const usuarioRepository = {
       },
       select: camposSeguros,
     });
+    return aplanar(fila);
   },
 
   /** Devuelve `false` si el usuario no es de este emprendimiento. */

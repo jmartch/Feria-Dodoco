@@ -37,6 +37,7 @@ const vendedor = {
   nombre: "Vendedor",
   rol: "VENDEDOR" as const,
   emprendimientoId: "emp-1",
+  nombreEmprendimiento: "Dodoco",
 };
 
 describe("middlewares", () => {

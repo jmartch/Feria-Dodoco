@@ -146,7 +146,11 @@ nav {
   backdrop-filter: saturate(180%) blur(10px);
   border-bottom: 1px solid var(--linea);
 }
-.nav-marca { display: inline-flex; align-items: center; padding: 0; margin-right: 6px; }
+.nav-marca {
+  display: inline-flex; align-items: center; padding: 0; margin-right: 10px;
+  font-weight: 800; font-size: 1.05rem; color: var(--tinta); letter-spacing: -0.01em;
+}
+.nav-marca:hover { color: var(--rosa-oscuro); background: transparent; text-decoration: none; }
 .nav-marca img { height: 30px; width: auto; display: block; }
 nav a { color: var(--gris); font-weight: 700; font-size: 0.9rem; padding: 8px 12px; border-radius: 10px; }
 nav a:hover { color: var(--rosa-oscuro); background: var(--rosa-suave); text-decoration: none; }
@@ -460,6 +464,63 @@ form.form-evento { max-width: 100%; margin: 0; padding: 18px; border-radius: var
 .emoji-op:hover { border-color: var(--rosa-borde); background: var(--rosa-suave); }
 .emoji-op.activo { border-color: var(--rosa); background: var(--rosa-suave); box-shadow: 0 0 0 3px var(--rosa-suave); }
 
+/* ---- Bienvenida personalizada ------------------------------------------ */
+
+.bienvenida { color: var(--gris); font-size: 0.95rem; margin: 0 0 4px; }
+.bienvenida strong { color: var(--tinta); }
+
+/* ---- Toast: venta registrada -------------------------------------------- */
+
+.toast-ok {
+  position: sticky; top: 12px; z-index: 30;
+  margin: 0 auto 14px; max-width: 420px;
+  background: #ecfdf3; color: #027a48; border: 1.5px solid #a6f4c5;
+  border-radius: var(--radio-sm); padding: 12px 16px;
+  font-weight: 800; text-align: center;
+  box-shadow: var(--sombra);
+  animation: toast-entra 0.2s ease;
+}
+@keyframes toast-entra { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+/* ---- Ventas de hoy (lista en vivo) -------------------------------------- */
+
+.ventas-hechas { display: flex; flex-direction: column; gap: 8px; }
+.venta-hecha {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--tarjeta); border: 1px solid var(--linea);
+  border-radius: var(--radio-sm); padding: 12px 14px;
+  box-shadow: var(--sombra-suave);
+}
+.vh-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.vh-total { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.vh-meta { color: var(--gris); font-size: 0.82rem; }
+.vh-borrar { margin-left: auto; min-height: 38px; padding: 0 14px; font-size: 0.85rem; }
+.vh-borrar:hover { border-color: #f0a4a4; color: #b42318; background: #fef3f2; }
+
+/* ---- Chips de acción destructiva en la tarjeta de evento ---------------- */
+
+.evento-chip.borrar:hover { border-color: #f0a4a4; color: #b42318; background: #fef3f2; }
+
+/* ---- Modal de confirmación ---------------------------------------------- */
+
+.modal-fondo {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(36, 27, 40, 0.45);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-caja {
+  background: var(--tarjeta); border-radius: var(--radio);
+  box-shadow: var(--sombra); padding: 22px; max-width: 420px; width: 100%;
+}
+.modal-caja h2 { margin: 0 0 8px; }
+.modal-caja p { margin: 0 0 18px; color: var(--gris); }
+.modal-acciones { display: flex; gap: 10px; }
+.modal-acciones button { flex: 1 1 0; min-height: 44px; }
+button.peligro, button.peligro[type="button"] {
+  background: #d92d20; border-color: #d92d20; color: #fff;
+}
+button.peligro:hover, button.peligro[type="button"]:hover { background: #b42318; border-color: #b42318; color: #fff; }
+
 /* ==========================================================================
    RESPONSIVE — ajustes para celular (pantallas angostas)
    La base ya es mobile-first; aquí se afinan los puntos que se aprietan.
@@ -474,6 +535,7 @@ form.form-evento { max-width: 100%; margin: 0; padding: 18px; border-radius: var
   nav a { padding: 6px 8px; font-size: 0.8rem; }
   nav button { min-height: 34px; padding: 0 10px; font-size: 0.8rem; }
   nav span { font-size: 0.8rem; }
+  .nav-marca { font-size: 0.95rem; margin-right: 6px; }
   .nav-marca img { height: 26px; }
 
   /* Acciones del resumen: 2 por fila en vez de apretujar 3. */

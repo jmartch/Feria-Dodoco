@@ -152,6 +152,17 @@ export const eventoRepository = {
     return count === 1;
   },
 
+  /**
+   * Borra el evento completo. Líneas, descuentos, ventas (y sus items) y gastos
+   * caen por cascada. Devuelve `false` si el evento no es de este emprendimiento.
+   */
+  async eliminar(scope: Scope, id: string): Promise<boolean> {
+    const { count } = await prisma.evento.deleteMany({
+      where: { id, emprendimientoId: scope.emprendimientoId },
+    });
+    return count === 1;
+  },
+
   async listarDescuentos(scope: Scope, eventoId: string): Promise<Descuento[]> {
     return prisma.descuento.findMany({
       where: { eventoId, emprendimientoId: scope.emprendimientoId },

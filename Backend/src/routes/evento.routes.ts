@@ -19,6 +19,8 @@ eventoRoutes.use(autenticar);
 eventoRoutes.get("/", eventoController.listar);
 eventoRoutes.post("/", soloAdmin, validar(eventoSchema), eventoController.crear);
 eventoRoutes.get("/:id", eventoController.obtener);
+eventoRoutes.delete("/:id", soloAdmin, eventoController.eliminar);
+eventoRoutes.post("/:id/reiniciar", soloAdmin, eventoController.reiniciar);
 eventoRoutes.patch("/:id/candado", soloAdmin, validar(candadoSchema), eventoController.cambiarCandado);
 
 eventoRoutes.get("/:id/lineas", eventoController.listarLineas);

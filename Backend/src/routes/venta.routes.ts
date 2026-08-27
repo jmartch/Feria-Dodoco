@@ -11,4 +11,5 @@ export const ventaRoutes = Router({ mergeParams: true });
 
 ventaRoutes.post("/ventas", validar(ventaSchema), ventaController.registrar);
 ventaRoutes.get("/ventas", ventaController.listar);
+ventaRoutes.delete("/ventas/:ventaId", ventaController.eliminar);
 ventaRoutes.get("/totales", ventaController.totales);

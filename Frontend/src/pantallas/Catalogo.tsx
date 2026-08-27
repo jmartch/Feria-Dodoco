@@ -62,7 +62,7 @@ export function Catalogo() {
       <label>Precio<input type="number" min={0} step={1} value={precio || ""} onChange={(e) => setPrecio(Math.max(0, Math.trunc(Number(e.target.value))))} /></label>
       <label>Ícono</label>
       <SelectorEmoji valor={icono} onCambio={setIcono} />
-      <button type="button" onClick={agregar}>Agregar categoría</button>
+      <button type="button" onClick={agregar}>Agregar producto</button>
     </section>
   );
 }

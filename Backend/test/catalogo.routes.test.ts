@@ -87,7 +87,23 @@ describe("rutas de catálogo", () => {
     expect(res.body.codigo).toBe("DATOS_INVALIDOS");
   });
 
-  it("el preajuste de Bold deja los tres métodos configurados", async () => {
+  it("toda tienda nueva nace con Efectivo, QR y Datáfono, en ese orden", async () => {
+    const token = await registrarYEntrar("Dodoco", "a@dodoco.co");
+
+    const res = await request(app)
+      .get("/catalogo/metodos-pago")
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    // Efectivo primero: es el método que aparece seleccionado por defecto al cobrar.
+    expect(res.body.map((m: { nombre: string }) => m.nombre)).toEqual([
+      "Efectivo",
+      "QR",
+      "Datáfono",
+    ]);
+  });
+
+  it("no deja aplicar el preajuste cuando la tienda ya trae sus métodos", async () => {
     const token = await registrarYEntrar("Dodoco", "a@dodoco.co");
 
     const res = await request(app)
@@ -95,11 +111,6 @@ describe("rutas de catálogo", () => {
       .set("Authorization", `Bearer ${token}`)
       .send({});
 
-    expect(res.status).toBe(201);
-    expect(res.body.map((m: { nombre: string }) => m.nombre)).toEqual([
-      "Efectivo",
-      "QR",
-      "Datáfono",
-    ]);
+    expect(res.status).toBe(409);
   });
 });

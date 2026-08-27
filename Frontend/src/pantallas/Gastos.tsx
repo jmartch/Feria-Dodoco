@@ -80,16 +80,16 @@ export function Gastos() {
           <span className="stat-etq">Vendido</span>
         </div>
         <div className="stat">
+          <span className="stat-valor">{formatearPesos(neto)}</span>
+          <span className="stat-etq">Neto tras comisiones</span>
+        </div>
+        <div className="stat">
           <span className="stat-valor">{formatearPesos(totalGastos)}</span>
           <span className="stat-etq">Gastos</span>
         </div>
         <div className="stat destacado">
           <span className="stat-valor">{formatearPesos(ganancia)}</span>
           <span className="stat-etq">Ganancia</span>
-        </div>
-        <div className="stat">
-          <span className="stat-valor">{formatearPesos(neto)}</span>
-          <span className="stat-etq">Neto tras comisiones</span>
         </div>
       </div>
       <p className="nota">La ganancia es lo neto (después de comisiones) menos los gastos.</p>

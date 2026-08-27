@@ -36,6 +36,30 @@ export const ventaController = {
   },
 
   /**
+   * Borrar una venta lo puede hacer cualquiera en plena feria: es la forma de
+   * corregir un cobro mal registrado sin llamar al administrador.
+   */
+  async eliminar(req: Request, res: Response, next: NextFunction) {
+    try {
+      const scope = scopeDe(req);
+      const eventoId = String(req.params.id);
+      const evento = await eventoRepository.buscarPorId(scope, eventoId);
+      if (!evento) {
+        throw new ErrorDeNegocio("EVENTO_NO_ENCONTRADO", "El evento no existe", 404);
+      }
+
+      const borrada = await ventaRepository.eliminar(scope, eventoId, String(req.params.ventaId));
+      if (!borrada) {
+        throw new ErrorDeNegocio("VENTA_NO_ENCONTRADA", "La venta no existe", 404);
+      }
+
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
    * El vendedor ve lo que cobró y cuánto falta para la meta; no ve comisiones
    * ni ganancia neta, porque confunden en plena feria. Esas cifras son del
    * administrador.

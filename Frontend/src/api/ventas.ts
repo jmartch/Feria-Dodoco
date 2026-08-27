@@ -12,6 +12,9 @@ export function crearApiVentas(cliente: Cliente) {
     listar(eventoId: string) {
       return cliente.pedir<VentaGuardada[]>(`/eventos/${eventoId}/ventas`);
     },
+    eliminar(eventoId: string, ventaId: string) {
+      return cliente.pedir<void>(`/eventos/${eventoId}/ventas/${ventaId}`, { method: "DELETE" });
+    },
     totales(eventoId: string) {
       return cliente.pedir<TotalesEvento>(`/eventos/${eventoId}/totales`);
     },

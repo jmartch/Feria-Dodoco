@@ -17,6 +17,7 @@ export type Usuario = {
   nombre: string;
   rol: Rol;
   emprendimientoId: string;
+  nombreEmprendimiento: string;
 };
 
 export type Sesion = {

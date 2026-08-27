@@ -6,7 +6,7 @@ import { Navegacion } from "../src/componentes/Navegacion";
 it("el vendedor no ve enlaces de administración", () => {
   render(
     <MemoryRouter>
-      <Navegacion usuario={{ id: "u1", email: "v@v.co", nombre: "Vale", rol: "VENDEDOR", emprendimientoId: "e1" }} salir={() => {}} />
+      <Navegacion usuario={{ id: "u1", email: "v@v.co", nombre: "Vale", rol: "VENDEDOR", emprendimientoId: "e1", nombreEmprendimiento: "Mi Tienda" }} salir={() => {}} />
     </MemoryRouter>,
   );
   expect(screen.getByText(/vale/i)).toBeInTheDocument();
@@ -17,7 +17,7 @@ it("el vendedor no ve enlaces de administración", () => {
 it("el admin ve los enlaces de administración", () => {
   render(
     <MemoryRouter>
-      <Navegacion usuario={{ id: "u1", email: "a@a.co", nombre: "Ana", rol: "ADMIN", emprendimientoId: "e1" }} salir={() => {}} />
+      <Navegacion usuario={{ id: "u1", email: "a@a.co", nombre: "Ana", rol: "ADMIN", emprendimientoId: "e1", nombreEmprendimiento: "Mi Tienda" }} salir={() => {}} />
     </MemoryRouter>,
   );
   expect(screen.getByRole("link", { name: /catálogo/i })).toBeInTheDocument();

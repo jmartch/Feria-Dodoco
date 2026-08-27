@@ -16,6 +16,13 @@ import { Cargando } from "../componentes/Cargando";
 // Producto vendible: sale directo del catálogo del emprendimiento.
 type Producto = { id: string; nombre: string; precio: number; icono: string | null };
 
+// El método en efectivo es el único que pide "recibido" y calcula cambio.
+const esEfectivoNombre = (nombre: string) => /efectivo/i.test(nombre);
+
+function hora(iso: string) {
+  return new Date(iso).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" });
+}
+
 export function Vender() {
   const { id: eventoId = "" } = useParams();
   const { cliente, usuario } = useAuth();
@@ -23,6 +30,7 @@ export function Vender() {
   const apiVentas = useMemo(() => crearApiVentas(cliente), [cliente]);
   const apiCatalogo = useMemo(() => crearApiCatalogo(cliente), [cliente]);
   const cola = useMemo(() => crearCola(apiVentas), [apiVentas]);
+  const esAdmin = usuario?.rol === "ADMIN";
 
   const [productos, setProductos] = useState<Producto[] | null>(null);
   const [descuentos, setDescuentos] = useState<Descuento[]>([]);
@@ -31,6 +39,7 @@ export function Vender() {
   const [ventas, setVentas] = useState<VentaGuardada[]>([]);
   const [nombreFeria, setNombreFeria] = useState("");
   const [verResumen, setVerResumen] = useState(false);
+  const [aviso, setAviso] = useState(false);
 
   const [cantidades, setCantidades] = useState<Record<string, number>>({});
   const [descuentoId, setDescuentoId] = useState<string | null>(null);
@@ -50,8 +59,12 @@ export function Vender() {
     ]).then(([cats, ds, ms]) => {
       setProductos(cats.map((c) => ({ id: c.id, nombre: c.nombre, precio: c.precio, icono: c.icono ?? null })));
       setDescuentos(ds.filter((d) => d.activo));
-      setMetodos(ms.filter((m) => m.activo));
-      if (ms[0]) setMetodoId(ms[0].id);
+      const activos = ms.filter((m) => m.activo);
+      setMetodos(activos);
+      // Efectivo es el método por defecto; si no existe, el primero de la lista.
+      const efectivo = activos.find((m) => esEfectivoNombre(m.nombre));
+      if (efectivo) setMetodoId(efectivo.id);
+      else if (activos[0]) setMetodoId(activos[0].id);
     });
     apiEventos.buscar(eventoId).then((e) => setNombreFeria(e.nombre)).catch(() => {});
     refrescarResumen();
@@ -59,6 +72,7 @@ export function Vender() {
 
   const descuentoActivo = descuentos.find((d) => d.id === descuentoId) ?? null;
   const metodoActivo = metodos.find((m) => m.id === metodoId) ?? null;
+  const esEfectivo = metodoActivo ? esEfectivoNombre(metodoActivo.nombre) : true;
 
   const calculo = useMemo(() => {
     const items = (productos ?? []).map((p) => ({
@@ -80,12 +94,14 @@ export function Vender() {
 
   async function registrar() {
     if (calculo.total <= 0 || !metodoActivo) return;
+    // Sin efectivo no hay vueltas: se registra "recibido = total" para que el cambio sea 0.
+    const recibidoFinal = esEfectivo ? recibido : calculo.total;
     const cuerpo = {
       uuid: crypto.randomUUID(),
       lineas: calculo.items.map((i) => ({ nombre: i.nombre, precioUnitario: i.precioUnitario, cantidad: i.cantidad })),
       metodoPagoId: metodoActivo.id,
       descuentoId: descuentoActivo?.id ?? null,
-      recibido,
+      recibido: recibidoFinal,
       // La hora de la venta queda registrada aquí, en el momento exacto del cobro.
       creadaEnDispositivo: new Date().toISOString(),
     };
@@ -94,7 +110,20 @@ export function Vender() {
     setCantidades({});
     setRecibido(0);
     setDescuentoId(null);
+    // Confirmación visible para evitar registros duplicados por falta de respuesta.
+    setAviso(true);
+    window.setTimeout(() => setAviso(false), 2500);
     await cola.sincronizar();
+    refrescarResumen();
+  }
+
+  async function borrarVenta(id: string) {
+    if (!window.confirm("¿Eliminar esta venta? No se puede deshacer.")) return;
+    try {
+      await apiVentas.eliminar(eventoId, id);
+    } catch {
+      // Si aún estaba en la cola (sin id de servidor) no pasa nada; se refresca igual.
+    }
     refrescarResumen();
   }
 
@@ -119,9 +148,18 @@ export function Vender() {
 
   if (!productos) return <Cargando que="la venta" />;
 
+  // La venta recién registrada arriba: retroalimentación inmediata.
+  const ventasRecientes = [...ventas].reverse();
+
   return (
     <section>
       <h1>Vender</h1>
+
+      {aviso && (
+        <div className="toast-ok" role="status" aria-live="polite">
+          ✅ Venta registrada correctamente
+        </div>
+      )}
 
       <div className="resumen-dia">
         <BarraMeta bruto={totales?.bruto ?? 0} meta={totales?.meta ?? 0} />
@@ -145,7 +183,7 @@ export function Vender() {
                 <strong>{formatearPesos(m.total)}</strong>
               </div>
             ))}
-            {usuario?.rol === "ADMIN" && (
+            {esAdmin && (
               <Link to={`/eventos/${eventoId}/gastos`} className="evento-chip">Gastos y ganancia →</Link>
             )}
           </div>
@@ -212,27 +250,53 @@ export function Vender() {
           <span>Total a cobrar</span>
           <strong>{formatearPesos(calculo.total)}</strong>
         </div>
-        <div className="cobro-pago">
-          <label>
-            Recibido
-            <input
-              type="number"
-              min={0}
-              step={1}
-              value={recibido || ""}
-              onChange={(e) => setRecibido(Math.max(0, Math.trunc(Number(e.target.value))))}
-            />
-          </label>
-          <button type="button" onClick={() => setRecibido(calculo.total)}>Pago exacto</button>
-        </div>
-        <div className="cobro-cambio">
-          <span>Cambio</span>
-          <strong>{formatearPesos(calculo.cambio)}</strong>
-        </div>
+        {esEfectivo && (
+          <>
+            <div className="cobro-pago">
+              <label>
+                Recibido
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={recibido || ""}
+                  onChange={(e) => setRecibido(Math.max(0, Math.trunc(Number(e.target.value))))}
+                />
+              </label>
+              <button type="button" onClick={() => setRecibido(calculo.total)}>Pago exacto</button>
+            </div>
+            <div className="cobro-cambio">
+              <span>Cambio</span>
+              <strong>{formatearPesos(calculo.cambio)}</strong>
+            </div>
+          </>
+        )}
         <button type="button" className="principal" onClick={registrar} disabled={calculo.total <= 0}>
           Registrar venta
         </button>
       </div>
+
+      <h2>Ventas de hoy</h2>
+      {ventasRecientes.length === 0 ? (
+        <p className="venta-vacia">Aún no hay ventas registradas.</p>
+      ) : (
+        <ul className="ventas-hechas">
+          {ventasRecientes.map((v) => (
+            <li key={v.id || v.uuid} className="venta-hecha">
+              <div className="vh-info">
+                <strong className="vh-total">{formatearPesos(v.total)}</strong>
+                <span className="vh-meta">
+                  {v.metodoPagoNombre} · {hora(v.creadaEnDispositivo)}
+                  {esAdmin && v.neto != null ? ` · neto ${formatearPesos(v.neto)}` : ""}
+                </span>
+              </div>
+              <button type="button" className="vh-borrar" onClick={() => borrarVenta(v.id)} aria-label="Eliminar venta">
+                Eliminar
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

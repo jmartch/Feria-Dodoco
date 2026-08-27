@@ -7,6 +7,11 @@ export function crearApiEventos(cliente: Cliente) {
     crear: (datos: { nombre: string; fechaInicio: string; fechaFin: string | null; meta: number }) =>
       cliente.pedir<Evento>("/eventos", { method: "POST", body: JSON.stringify(datos) }),
     buscar: (id: string) => cliente.pedir<Evento>(`/eventos/${id}`),
+    // Reiniciar feria: borra todas las ventas y conserva la configuración.
+    reiniciar: (id: string) =>
+      cliente.pedir<{ ventasEliminadas: number }>(`/eventos/${id}/reiniciar`, { method: "POST", body: JSON.stringify({}) }),
+    // Eliminar feria: borra el evento por completo.
+    eliminar: (id: string) => cliente.pedir<void>(`/eventos/${id}`, { method: "DELETE" }),
     cambiarCandado: (id: string, bloqueado: boolean) =>
       cliente.pedir<Evento>(`/eventos/${id}/candado`, { method: "PATCH", body: JSON.stringify({ bloqueado }) }),
     listarLineas: (id: string) => cliente.pedir<EventoItem[]>(`/eventos/${id}/lineas`),

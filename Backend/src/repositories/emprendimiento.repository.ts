@@ -19,6 +19,17 @@ export type Emprendimiento = {
 };
 
 /**
+ * Métodos de pago que toda tienda nueva trae listos: el usuario no debe crearlos
+ * a mano. Efectivo va primero (orden 0) para ser el que aparece seleccionado por
+ * defecto. Comisiones estándar de Bold en puntos básicos (QR 1,5 %, datáfono 5 %).
+ */
+const METODOS_POR_DEFECTO = [
+  { nombre: "Efectivo", comisionPct: 0 },
+  { nombre: "QR", comisionPct: 150 },
+  { nombre: "Datáfono", comisionPct: 500 },
+];
+
+/**
  * Traduce el choque de la restricción única de email a un error de dominio.
  * Vive en el repositorio porque es la capa que conoce los códigos de Prisma:
  * los servicios no deben saber qué es un "P2002".
@@ -52,6 +63,18 @@ export const emprendimientoRepository = {
         data: { id: emprendimientoId, nombre: datos.nombreEmprendimiento },
       });
 
+      // La tienda nace con sus métodos de pago listos.
+      await tx.metodoPago.createMany({
+        data: METODOS_POR_DEFECTO.map((m, i) => ({
+          id: randomUUID(),
+          nombre: m.nombre,
+          comisionPct: m.comisionPct,
+          activo: true,
+          orden: i,
+          emprendimientoId,
+        })),
+      });
+
       return tx.usuario.create({
         data: {
           id: randomUUID(),
@@ -71,7 +94,11 @@ export const emprendimientoRepository = {
       });
     });
 
-    return { emprendimientoId, usuario };
+    return {
+      emprendimientoId,
+      // El nombre de la tienda ya lo conocemos por la entrada; se adjunta plano.
+      usuario: { ...usuario, nombreEmprendimiento: datos.nombreEmprendimiento.trim() },
+    };
     } catch (error) {
       if (esEmailDuplicado(error)) {
         throw new ErrorDeNegocio(

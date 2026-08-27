@@ -5,56 +5,39 @@ import type { MetodoPago } from "../api/tipos";
 import { Cargando } from "../componentes/Cargando";
 import { Empleados } from "../componentes/Empleados";
 
+// La comisión se guarda en puntos básicos enteros: 150 = 1,5 %.
+function comisionTexto(comisionPct: number) {
+  if (comisionPct === 0) return "sin comisión";
+  return `${(comisionPct / 100).toString().replace(".", ",")} % de comisión`;
+}
+
 export function Configuracion() {
   const { cliente } = useAuth();
   const api = useMemo(() => crearApiCatalogo(cliente), [cliente]);
   const [metodos, setMetodos] = useState<MetodoPago[] | null>(null);
-  const [nombre, setNombre] = useState("");
-  const [porcentaje, setPorcentaje] = useState(0); // en % (1,5), se convierte a puntos básicos
-
-  async function recargar() {
-    setMetodos(await api.listarMetodos());
-  }
 
   useEffect(() => {
-    void recargar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    api.listarMetodos().then(setMetodos);
   }, [api]);
 
   if (!metodos) return <Cargando que="la configuración" />;
-
-  async function agregar() {
-    if (!nombre) return;
-    // El backend guarda la comisión en puntos básicos enteros: 1,5 % -> 150.
-    const comisionPct = Math.round(porcentaje * 100);
-    await api.crearMetodo({ nombre, comisionPct, activo: true });
-    setNombre("");
-    setPorcentaje(0);
-    await recargar();
-  }
-
-  async function aplicarBold() {
-    await api.preajusteBold();
-    await recargar();
-  }
 
   return (
     <section>
       <h1>Configuración</h1>
 
       <h2>Métodos de pago</h2>
+      <p className="nota">Vienen listos con la tienda. Efectivo es el que aparece por defecto al cobrar.</p>
       <ul>
         {metodos.map((m) => (
-          <li key={m.id}>{m.nombre}</li>
+          <li key={m.id}>
+            <div className="sel-info">
+              <div className="sel-nombre">{m.nombre}</div>
+              <div className="sel-precio">{comisionTexto(m.comisionPct)}</div>
+            </div>
+          </li>
         ))}
       </ul>
-
-      <button type="button" onClick={aplicarBold}>Aplicar preajuste de Bold</button>
-
-      <h2>Agregar método</h2>
-      <label>Nombre<input value={nombre} onChange={(e) => setNombre(e.target.value)} /></label>
-      <label>Comisión (%)<input type="number" min={0} step={0.1} value={porcentaje || ""} onChange={(e) => setPorcentaje(Math.max(0, Number(e.target.value)))} /></label>
-      <button type="button" onClick={agregar}>Agregar método</button>
 
       <Empleados />
     </section>
