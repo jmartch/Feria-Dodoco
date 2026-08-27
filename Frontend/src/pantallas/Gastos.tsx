@@ -29,6 +29,7 @@ export function Gastos() {
   const [categoria, setCategoria] = useState(CATEGORIAS[0]);
   const [monto, setMonto] = useState(0);
   const [guardando, setGuardando] = useState(false);
+  const [pestana, setPestana] = useState<"ganancias" | "gastos">("ganancias");
 
   async function recargar() {
     const r = await apiGastos.listar(eventoId);
@@ -73,6 +74,29 @@ export function Gastos() {
     <section>
       <h1>Gastos y ganancia</h1>
 
+      <div className="pestanas" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={pestana === "ganancias"}
+          className={`pestana${pestana === "ganancias" ? " activa" : ""}`}
+          onClick={() => setPestana("ganancias")}
+        >
+          Ganancias
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={pestana === "gastos"}
+          className={`pestana${pestana === "gastos" ? " activa" : ""}`}
+          onClick={() => setPestana("gastos")}
+        >
+          Gastos
+        </button>
+      </div>
+
+      {pestana === "ganancias" && (
+      <>
       <h2>Resultado de la feria</h2>
       <div className="stats">
         <div className="stat">
@@ -93,7 +117,11 @@ export function Gastos() {
         </div>
       </div>
       <p className="nota">La ganancia es lo neto (después de comisiones) menos los gastos.</p>
+      </>
+      )}
 
+      {pestana === "gastos" && (
+      <>
       <h2>Agregar gasto</h2>
       <form onSubmit={agregar} className="form-evento">
         {error && <Aviso mensaje={error} />}
@@ -138,6 +166,8 @@ export function Gastos() {
             </li>
           ))}
         </ul>
+      )}
+      </>
       )}
     </section>
   );

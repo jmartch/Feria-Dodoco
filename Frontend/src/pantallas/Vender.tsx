@@ -47,6 +47,15 @@ export function Vender() {
   const [recibido, setRecibido] = useState<number>(0);
   // Cuando no es null, el formulario corrige esa venta en vez de crear una nueva.
   const [editandoId, setEditandoId] = useState<string | null>(null);
+  // Líneas de una venta en edición cuyo producto ya no está en el catálogo
+  // (renombrado o borrado). Se conservan como "producto retirado".
+  const [lineasExtra, setLineasExtra] = useState<{ nombre: string; precioUnitario: number; cantidad: number }[]>([]);
+
+  // Emoji del producto por nombre; si ya no existe en el catálogo, uno neutro.
+  const iconoDe = useCallback(
+    (nombre: string) => (productos ?? []).find((p) => p.nombre === nombre)?.icono ?? "🛍️",
+    [productos],
+  );
 
   const metodoPorDefecto = useCallback((lista: MetodoPago[]) => {
     const efectivo = lista.find((m) => esEfectivoNombre(m.nombre));
@@ -84,13 +93,15 @@ export function Vender() {
       precioUnitario: p.precio,
       cantidad: cantidades[p.id] ?? 0,
     }));
+    // Las líneas de producto retirado (solo al editar) entran igual en el cálculo.
+    const extras = lineasExtra.filter((l) => l.cantidad > 0);
     return calcularVenta({
-      lineas: items,
+      lineas: [...items, ...extras],
       descuentoPct: descuentoActivo?.porcentaje ?? 0,
       comisionPct: metodoActivo?.comisionPct ?? 0,
       recibido,
     });
-  }, [productos, cantidades, descuentoActivo, metodoActivo, recibido]);
+  }, [productos, cantidades, lineasExtra, descuentoActivo, metodoActivo, recibido]);
 
   // Desglose del día por producto: cuántas unidades y cuánto sumó cada uno.
   const porProducto = useMemo(() => {
@@ -104,9 +115,9 @@ export function Vender() {
       }
     }
     return [...acc.entries()]
-      .map(([nombre, x]) => ({ nombre, ...x }))
+      .map(([nombre, x]) => ({ nombre, icono: iconoDe(nombre), ...x }))
       .sort((a, b) => b.total - a.total);
-  }, [ventas]);
+  }, [ventas, iconoDe]);
 
   function cambiarCantidad(productoId: string, delta: number) {
     setCantidades((prev) => ({ ...prev, [productoId]: Math.max(0, (prev[productoId] ?? 0) + delta) }));
@@ -119,10 +130,17 @@ export function Vender() {
 
   function limpiarFormulario() {
     setCantidades({});
+    setLineasExtra([]);
     setRecibido(0);
     setDescuentoId(null);
     setEditandoId(null);
     setMetodoId(metodoPorDefecto(metodos));
+  }
+
+  function cambiarExtra(indice: number, delta: number) {
+    setLineasExtra((prev) =>
+      prev.map((l, i) => (i === indice ? { ...l, cantidad: Math.max(0, l.cantidad + delta) } : l)),
+    );
   }
 
   async function registrar() {
@@ -168,13 +186,17 @@ export function Vender() {
   }
 
   function editarVenta(v: VentaGuardada) {
-    // Se reconstruyen las cantidades emparejando cada item con su producto por nombre.
+    // Se reconstruyen las cantidades emparejando cada item con su producto por
+    // nombre. Los que ya no están en el catálogo se conservan como "producto retirado".
     const nuevas: Record<string, number> = {};
+    const retirados: { nombre: string; precioUnitario: number; cantidad: number }[] = [];
     for (const it of v.items ?? []) {
       const prod = (productos ?? []).find((p) => p.nombre === it.nombre);
       if (prod) nuevas[prod.id] = (nuevas[prod.id] ?? 0) + it.cantidad;
+      else retirados.push({ nombre: it.nombre, precioUnitario: it.precioUnitario, cantidad: it.cantidad });
     }
     setCantidades(nuevas);
+    setLineasExtra(retirados);
     setMetodoId(metodos.find((m) => m.nombre === v.metodoPagoNombre)?.id ?? metodoPorDefecto(metodos));
     setDescuentoId(descuentos.find((d) => d.nombre === v.descuentoNombre)?.id ?? null);
     setRecibido(v.recibido ?? 0);
@@ -251,7 +273,7 @@ export function Vender() {
             ) : (
               porProducto.map((p) => (
                 <div className="metodo-fila" key={p.nombre}>
-                  <span>{p.cantidad}× {p.nombre}</span>
+                  <span><span className="mf-emoji">{p.icono}</span> {p.cantidad}× {p.nombre}</span>
                   <strong>{formatearPesos(p.total)}</strong>
                 </div>
               ))
@@ -295,6 +317,26 @@ export function Vender() {
               </li>
             );
           })}
+        </ul>
+      )}
+
+      {lineasExtra.length > 0 && (
+        <ul className="venta-lista">
+          {lineasExtra.map((l, i) => (
+            <li key={`extra-${i}`} className={`sel-fila retirado${l.cantidad > 0 ? " activo" : ""}`}>
+              <div className="prod-emoji">🚫</div>
+              <div className="sel-info">
+                <div className="sel-nombre">{l.nombre}</div>
+                <div className="sel-precio">Producto retirado · {formatearPesos(l.precioUnitario)}</div>
+              </div>
+              <div className="stepper">
+                <button type="button" onClick={() => cambiarExtra(i, -1)}>−</button>
+                <span className="cant">{l.cantidad}</span>
+                <button type="button" onClick={() => cambiarExtra(i, 1)}>+</button>
+              </div>
+              <span className="sel-subtotal">{formatearPesos(l.precioUnitario * l.cantidad)}</span>
+            </li>
+          ))}
         </ul>
       )}
 
@@ -369,23 +411,35 @@ export function Vender() {
         <p className="venta-vacia">Aún no hay ventas registradas.</p>
       ) : (
         <ul className="ventas-hechas">
-          {ventasRecientes.map((v) => (
-            <li key={v.id || v.uuid} className={`venta-hecha${editandoId === v.id ? " editando" : ""}`}>
-              <div className="vh-info">
+          {ventasRecientes.map((v) => {
+            const items = v.items ?? [];
+            const texto = items.map((it) => `${it.cantidad}× ${it.nombre}`).join(", ");
+            return (
+              <li key={v.id || v.uuid} className={`venta-hecha${editandoId === v.id ? " editando" : ""}`}>
+                <div className="vh-emojis">
+                  {items.map((it, i) => (
+                    <span key={i}>{iconoDe(it.nombre)}</span>
+                  ))}
+                </div>
+                <div className="vh-info">
+                  <span className="vh-productos">{texto || "Venta"}</span>
+                  <span className="vh-meta">
+                    {v.metodoPagoNombre} · {hora(v.creadaEnDispositivo)}
+                    {esAdmin && v.neto != null ? ` · neto ${formatearPesos(v.neto)}` : ""}
+                  </span>
+                </div>
                 <strong className="vh-total">{formatearPesos(v.total)}</strong>
-                <span className="vh-meta">
-                  {v.metodoPagoNombre} · {hora(v.creadaEnDispositivo)}
-                  {esAdmin && v.neto != null ? ` · neto ${formatearPesos(v.neto)}` : ""}
-                </span>
-              </div>
-              <button type="button" className="vh-editar" onClick={() => editarVenta(v)} aria-label="Editar venta">
-                Editar
-              </button>
-              <button type="button" className="vh-borrar" onClick={() => borrarVenta(v.id)} aria-label="Eliminar venta">
-                Eliminar
-              </button>
-            </li>
-          ))}
+                <div className="vh-acciones">
+                  <button type="button" className="vh-editar" onClick={() => editarVenta(v)} aria-label="Editar venta">
+                    Editar
+                  </button>
+                  <button type="button" className="vh-borrar" onClick={() => borrarVenta(v.id)} aria-label="Eliminar venta">
+                    Eliminar
+                  </button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

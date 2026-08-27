@@ -464,6 +464,21 @@ form.form-evento { max-width: 100%; margin: 0; padding: 18px; border-radius: var
 .emoji-op:hover { border-color: var(--rosa-borde); background: var(--rosa-suave); }
 .emoji-op.activo { border-color: var(--rosa); background: var(--rosa-suave); box-shadow: 0 0 0 3px var(--rosa-suave); }
 
+/* ---- Pestañas (Ganancias / Gastos) ------------------------------------- */
+
+.pestanas {
+  display: flex; gap: 4px; padding: 4px;
+  background: var(--rosa-suave); border-radius: var(--radio-sm);
+  margin-bottom: 6px;
+}
+.pestana {
+  flex: 1 1 0; min-height: 40px; background: transparent; border: none;
+  color: var(--rosa-oscuro); font-weight: 700; border-radius: 10px;
+}
+.pestana:hover { background: rgba(255, 255, 255, 0.5); }
+.pestana.activa { background: var(--tarjeta); color: var(--tinta); box-shadow: var(--sombra-suave); }
+.pestana.activa:hover { background: var(--tarjeta); }
+
 /* ---- Bienvenida personalizada ------------------------------------------ */
 
 .bienvenida { color: var(--gris); font-size: 0.95rem; margin: 0 0 4px; }
@@ -486,18 +501,28 @@ form.form-evento { max-width: 100%; margin: 0; padding: 18px; border-radius: var
 
 .ventas-hechas { display: flex; flex-direction: column; gap: 8px; }
 .venta-hecha {
-  display: flex; align-items: center; gap: 12px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   background: var(--tarjeta); border: 1px solid var(--linea);
-  border-radius: var(--radio-sm); padding: 12px 14px;
+  border-radius: var(--radio-sm); padding: 10px 12px;
   box-shadow: var(--sombra-suave);
 }
-.vh-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.vh-total { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
-.vh-meta { color: var(--gris); font-size: 0.82rem; }
-.vh-editar { margin-left: auto; min-height: 38px; padding: 0 14px; font-size: 0.85rem; }
-.vh-borrar { min-height: 38px; padding: 0 14px; font-size: 0.85rem; }
+.vh-emojis { display: inline-flex; gap: 2px; font-size: 1.2rem; line-height: 1; flex: 0 0 auto; }
+.vh-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 40%; }
+.vh-productos { font-weight: 700; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; }
+.vh-total { font-size: 1.05rem; font-variant-numeric: tabular-nums; margin-left: auto; }
+.vh-meta { color: var(--gris); font-size: 0.8rem; }
+.vh-acciones { display: inline-flex; gap: 6px; flex: 0 0 auto; }
+.vh-editar, .vh-borrar { min-height: 36px; padding: 0 12px; font-size: 0.82rem; }
 .vh-borrar:hover { border-color: #f0a4a4; color: #b42318; background: #fef3f2; }
 .venta-hecha.editando { border-color: var(--rosa); box-shadow: 0 0 0 3px var(--rosa-suave); }
+
+/* Emoji pequeño en el desglose por producto del resumen. */
+.mf-emoji { font-size: 1rem; }
+
+/* Producto retirado (ya no está en el catálogo) dentro de una venta en edición. */
+.sel-fila.retirado { border-style: dashed; }
+.sel-fila.retirado .prod-emoji { background: #f4f4f5; }
+.sel-fila.retirado .sel-precio { color: #b42318; }
 
 /* Título de subgrupo dentro del resumen del día (Por producto / Por método). */
 .resumen-titulo {

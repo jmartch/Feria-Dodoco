@@ -37,14 +37,19 @@ it("agrega un gasto y actualiza la ganancia (neto menos gastos)", async () => {
     </AuthProvider>,
   );
 
-  // Sin gastos, la ganancia es igual al neto: 100.000.
+  // Pestaña "Ganancias" (por defecto): sin gastos, la ganancia es el neto: 100.000.
   expect((await screen.findAllByText(/100\.000/)).length).toBeGreaterThan(0);
 
+  // El formulario de gasto vive en la pestaña "Gastos".
+  await userEvent.click(screen.getByRole("tab", { name: /gastos/i }));
   await userEvent.type(screen.getByLabelText(/en qué gastaste/i), "Buses ida y vuelta");
   await userEvent.type(screen.getByLabelText(/monto/i), "20000");
   await userEvent.click(screen.getByRole("button", { name: /agregar gasto/i }));
 
-  // El gasto aparece y la ganancia baja a 80.000.
+  // El gasto aparece en la lista de la pestaña "Gastos".
   await waitFor(() => expect(screen.getByText("Buses ida y vuelta")).toBeInTheDocument());
+
+  // Al volver a "Ganancias", la ganancia bajó a 80.000.
+  await userEvent.click(screen.getByRole("tab", { name: /ganancias/i }));
   expect((await screen.findAllByText(/80\.000/)).length).toBeGreaterThan(0);
 });
