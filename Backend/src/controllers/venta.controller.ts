@@ -35,6 +35,21 @@ export const ventaController = {
     }
   },
 
+  /** Edita una venta ya registrada (corrección de un cobro). */
+  async editar(req: Request, res: Response, next: NextFunction) {
+    try {
+      const venta = await ventaService.editar(
+        scopeDe(req),
+        String(req.params.id),
+        String(req.params.ventaId),
+        req.body,
+      );
+      res.json(venta);
+    } catch (error) {
+      next(error);
+    }
+  },
+
   /**
    * Borrar una venta lo puede hacer cualquiera en plena feria: es la forma de
    * corregir un cobro mal registrado sin llamar al administrador.

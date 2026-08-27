@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { crearCliente, type Cliente } from "../api/cliente";
 import { crearApiAuth, type DatosRegistro } from "../api/auth";
 import type { Sesion, Usuario } from "../api/tipos";
@@ -19,7 +19,9 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
-  const [cargando] = useState(false);
+  // Al arrancar, si hay refresh token guardado, se intenta restaurar la sesión;
+  // mientras tanto `cargando` evita que las rutas protegidas manden al login.
+  const [cargando, setCargando] = useState<boolean>(() => Boolean(almacenamiento.leerRefresh()));
   // El access token vive en una ref (memoria), no en el estado: cambiarlo no
   // debe re-renderizar, y no debe persistirse.
   const accessRef = useRef<string | null>(null);
@@ -49,6 +51,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const auth = crearApiAuth(cliente);
+
+  // Restauración de sesión al recargar (F5): sin access token en memoria, la
+  // primera petición da 401 y el cliente renueva sola con el refresh guardado,
+  // dejando la sesión aplicada. Si no hay refresh válido, se queda deslogueado.
+  useEffect(() => {
+    if (!almacenamiento.leerRefresh()) return;
+    cliente
+      .pedir<Usuario>("/auth/yo")
+      .then(setUsuario)
+      .catch(() => {})
+      .finally(() => setCargando(false));
+  }, [cliente]);
 
   async function entrar(email: string, password: string) {
     aplicarSesion(await auth.login(email, password));

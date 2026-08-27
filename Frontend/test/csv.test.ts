@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { ventasACSV } from "../src/dinero/csv";
+import { ventasACSV, nombreArchivoCSV } from "../src/dinero/csv";
 import type { VentaGuardada } from "../src/api/tipos";
 
 function venta(over: Partial<VentaGuardada>): VentaGuardada {
@@ -41,4 +41,9 @@ it("usa el molde original: encabezado, productos, comisión y fila total", () =>
   expect(total).toContain('"TOTAL DEL DÍA"');
   expect(total).toContain('"48000"'); // 24000 + 24000
   expect(total).toContain('"360"'); // comisiones
+});
+
+it("el nombre del archivo lleva tienda, feria y fecha-hora, sin tildes ni espacios", () => {
+  const nombre = nombreArchivoCSV("Perfumería XYZ", "Feria del Río", new Date("2026-08-26T14:05:00"));
+  expect(nombre).toBe("ventas-perfumeria-xyz-feria-del-rio-2026-08-26-14-05.csv");
 });

@@ -68,6 +68,26 @@ export function ventasACSV(ventas: VentaGuardada[]): string {
   return [ENCABEZADO, ...filas, totalDia].map((fila) => fila.map(escapar).join(",")).join("\r\n");
 }
 
+/** Deja un texto apto para nombre de archivo: sin tildes, espacios ni símbolos. */
+function trozo(texto: string): string {
+  const limpio = texto
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // marcas de tilde/diacríticos
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return limpio || "sin-nombre";
+}
+
+/** `ventas-<tienda>-<feria>-<AAAA-MM-DD-HH-mm>.csv` */
+export function nombreArchivoCSV(emprendimiento: string, feria: string, fecha = new Date()): string {
+  const dosDigitos = (n: number) => String(n).padStart(2, "0");
+  const marca =
+    `${fecha.getFullYear()}-${dosDigitos(fecha.getMonth() + 1)}-${dosDigitos(fecha.getDate())}` +
+    `-${dosDigitos(fecha.getHours())}-${dosDigitos(fecha.getMinutes())}`;
+  return `ventas-${trozo(emprendimiento)}-${trozo(feria)}-${marca}.csv`;
+}
+
 /** Dispara la descarga del CSV en el navegador. */
 export function descargarCSV(nombreArchivo: string, contenido: string): void {
   // El BOM (﻿) hace que Excel abra bien los acentos.

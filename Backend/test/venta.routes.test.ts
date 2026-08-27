@@ -183,6 +183,94 @@ describe("rutas de ventas", () => {
     expect(await prisma.venta.count()).toBe(0);
   });
 
+  it("edita una venta: recalcula totales y conserva la hora original", async () => {
+    const { auth, eventoId, qrId } = await prepararFeria();
+    const efectivoId = (
+      await request(app).get("/catalogo/metodos-pago").set(auth)
+    ).body.find((m: { nombre: string }) => m.nombre === "Efectivo").id as string;
+
+    const creada = await request(app)
+      .post(`/eventos/${eventoId}/ventas`)
+      .set(auth)
+      .send({
+        uuid: randomUUID(),
+        lineas: [{ nombre: "Diademas", precioUnitario: 15000, cantidad: 1 }],
+        metodoPagoId: qrId,
+        descuentoId: null,
+        recibido: 0,
+        creadaEnDispositivo: new Date("2026-08-26T18:00:00.000Z").toISOString(),
+      });
+
+    const editada = await request(app)
+      .put(`/eventos/${eventoId}/ventas/${creada.body.id}`)
+      .set(auth)
+      .send({
+        lineas: [{ nombre: "Diademas", precioUnitario: 15000, cantidad: 2 }],
+        metodoPagoId: efectivoId,
+        descuentoId: null,
+        recibido: 40000,
+      });
+
+    expect(editada.status).toBe(200);
+    expect(editada.body.total).toBe(30000);
+    expect(editada.body.metodoPagoNombre).toBe("Efectivo");
+    expect(editada.body.comisionValor).toBe(0); // efectivo no cobra comisión
+    expect(editada.body.cambio).toBe(10000);
+    // La hora original no cambia al corregir.
+    expect(editada.body.creadaEnDispositivo).toBe(creada.body.creadaEnDispositivo);
+
+    // El detalle se reemplazó, no se duplicó.
+    expect(await prisma.ventaItem.count({ where: { ventaId: creada.body.id } })).toBe(1);
+
+    const totales = await request(app).get(`/eventos/${eventoId}/totales`).set(auth);
+    expect(totales.body.bruto).toBe(30000);
+    expect(totales.body.porMetodo).toEqual([{ metodo: "Efectivo", total: 30000 }]);
+  });
+
+  it("no deja editar una venta de otro emprendimiento", async () => {
+    const propia = await prepararFeria();
+    const venta = await request(app)
+      .post(`/eventos/${propia.eventoId}/ventas`)
+      .set(propia.auth)
+      .send({
+        uuid: randomUUID(),
+        lineas: [{ nombre: "Diademas", precioUnitario: 15000, cantidad: 1 }],
+        metodoPagoId: propia.qrId,
+        descuentoId: null,
+        recibido: 0,
+        creadaEnDispositivo: new Date().toISOString(),
+      });
+
+    await request(app).post("/auth/registro").send({
+      nombreEmprendimiento: "Medias Pao",
+      nombreUsuario: "Beto",
+      email: "b@medias.co",
+      password: "clave-segura-123",
+    });
+    const login = await request(app)
+      .post("/auth/login")
+      .send({ email: "b@medias.co", password: "clave-segura-123" });
+    const ajeno = { Authorization: `Bearer ${login.body.accessToken}` };
+    const metodoAjeno = (
+      await request(app).get("/catalogo/metodos-pago").set(ajeno)
+    ).body[0].id as string;
+
+    const res = await request(app)
+      .put(`/eventos/${propia.eventoId}/ventas/${venta.body.id}`)
+      .set(ajeno)
+      .send({
+        lineas: [{ nombre: "Robo", precioUnitario: 1, cantidad: 1 }],
+        metodoPagoId: metodoAjeno,
+        descuentoId: null,
+        recibido: 0,
+      });
+
+    expect(res.status).toBe(404);
+    // La venta original sigue intacta.
+    const sigue = await prisma.venta.findUnique({ where: { id: venta.body.id } });
+    expect(sigue?.total).toBe(15000);
+  });
+
   it("borra una venta y desaparece de los totales", async () => {
     const { auth, eventoId, qrId } = await prepararFeria();
 

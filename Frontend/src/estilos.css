@@ -494,8 +494,24 @@ form.form-evento { max-width: 100%; margin: 0; padding: 18px; border-radius: var
 .vh-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .vh-total { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
 .vh-meta { color: var(--gris); font-size: 0.82rem; }
-.vh-borrar { margin-left: auto; min-height: 38px; padding: 0 14px; font-size: 0.85rem; }
+.vh-editar { margin-left: auto; min-height: 38px; padding: 0 14px; font-size: 0.85rem; }
+.vh-borrar { min-height: 38px; padding: 0 14px; font-size: 0.85rem; }
 .vh-borrar:hover { border-color: #f0a4a4; color: #b42318; background: #fef3f2; }
+.venta-hecha.editando { border-color: var(--rosa); box-shadow: 0 0 0 3px var(--rosa-suave); }
+
+/* Título de subgrupo dentro del resumen del día (Por producto / Por método). */
+.resumen-titulo {
+  margin-top: 6px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--gris);
+}
+
+/* Aviso de que el cobro está en modo edición. */
+.cobro-editando {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--rosa-suave); color: var(--rosa-oscuro);
+  border-radius: var(--radio-sm); padding: 8px 12px; font-weight: 700; font-size: 0.85rem;
+}
+.cobro-editando button { min-height: 34px; padding: 0 12px; font-size: 0.8rem; }
 
 /* ---- Chips de acción destructiva en la tarjeta de evento ---------------- */
 

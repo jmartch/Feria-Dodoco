@@ -90,7 +90,7 @@ export function Eventos() {
 
   return (
     <section>
-      <p className="bienvenida">Bienvenido a <strong>{usuario?.nombreEmprendimiento || "tu tienda"}</strong></p>
+      <p className="bienvenida">Bienvenido <strong>{usuario?.nombreEmprendimiento || "tu tienda"}</strong></p>
       <div className="eventos-cab">
         <h1>Eventos</h1>
         {esAdmin && (

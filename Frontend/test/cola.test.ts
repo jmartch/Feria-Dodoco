@@ -20,7 +20,7 @@ beforeEach(async () => {
 });
 
 it("encolar guarda la venta como pendiente", async () => {
-  const cola = crearCola({ registrar: vi.fn(), totales: vi.fn(), listar: vi.fn(), eliminar: vi.fn() });
+  const cola = crearCola({ registrar: vi.fn(), totales: vi.fn(), listar: vi.fn(), actualizar: vi.fn(), eliminar: vi.fn() });
   await cola.encolar("e1", cuerpo("u1"));
   expect(await cola.contarPendientes()).toBe(1);
 });
@@ -33,7 +33,7 @@ it("sincronizar envia las pendientes y las marca sincronizadas", async () => {
     metodoPagoNombre: "Efectivo",
     creadaEnDispositivo: new Date().toISOString(),
   }));
-  const cola = crearCola({ registrar, totales: vi.fn(), listar: vi.fn(), eliminar: vi.fn() });
+  const cola = crearCola({ registrar, totales: vi.fn(), listar: vi.fn(), actualizar: vi.fn(), eliminar: vi.fn() });
 
   await cola.encolar("e1", cuerpo("u1"));
   const res = await cola.sincronizar();
@@ -47,7 +47,7 @@ it("una venta que falla al enviar queda pendiente y suma un intento", async () =
   const registrar = vi.fn(async () => {
     throw new Error("sin red");
   });
-  const cola = crearCola({ registrar, totales: vi.fn(), listar: vi.fn(), eliminar: vi.fn() });
+  const cola = crearCola({ registrar, totales: vi.fn(), listar: vi.fn(), actualizar: vi.fn(), eliminar: vi.fn() });
 
   await cola.encolar("e1", cuerpo("u1"));
   const res = await cola.sincronizar();
@@ -62,7 +62,7 @@ it("no reenvia una venta ya sincronizada", async () => {
   const registrar = vi.fn(async (): Promise<VentaGuardada> => ({
     id: "v1", uuid: "u1", total: 12000, metodoPagoNombre: "Efectivo", creadaEnDispositivo: "x",
   }));
-  const cola = crearCola({ registrar, totales: vi.fn(), listar: vi.fn(), eliminar: vi.fn() });
+  const cola = crearCola({ registrar, totales: vi.fn(), listar: vi.fn(), actualizar: vi.fn(), eliminar: vi.fn() });
 
   await cola.encolar("e1", cuerpo("u1"));
   await cola.sincronizar();

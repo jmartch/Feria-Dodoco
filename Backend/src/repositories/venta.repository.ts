@@ -78,6 +78,50 @@ export const ventaRepository = {
     });
   },
 
+  async buscarEnEvento(
+    scope: Scope,
+    eventoId: string,
+    ventaId: string,
+  ): Promise<VentaGuardada | null> {
+    return prisma.venta.findFirst({
+      where: { id: ventaId, eventoId, emprendimientoId: scope.emprendimientoId },
+      select: campos,
+    });
+  },
+
+  /**
+   * Reescribe una venta ya existente: cabecera recalculada y detalle reemplazado,
+   * todo en una transacción. Conserva `uuid`, `eventoId`, `usuarioId` y la hora
+   * original — es una corrección, no una venta nueva. Quien llama ya verificó que
+   * la venta pertenece al scope.
+   */
+  async actualizar(
+    scope: Scope,
+    ventaId: string,
+    cabecera: Omit<VentaGuardada, "id" | "uuid" | "creadaEnDispositivo">,
+    items: { nombre: string; precioUnitario: number; cantidad: number; subtotal: number }[],
+  ): Promise<VentaGuardada> {
+    return prisma.$transaction(async (tx) => {
+      const actualizada = await tx.venta.update({
+        where: { id: ventaId },
+        data: cabecera,
+        select: campos,
+      });
+
+      await tx.ventaItem.deleteMany({ where: { ventaId } });
+      await tx.ventaItem.createMany({
+        data: items.map((item) => ({
+          ...item,
+          id: randomUUID(),
+          ventaId,
+          emprendimientoId: scope.emprendimientoId,
+        })),
+      });
+
+      return actualizada;
+    });
+  },
+
   /**
    * Inserta la venta y su detalle en una transacción. Si el `uuid` ya existía,
    * devuelve la venta guardada en vez de fallar: reenviar es lo normal cuando

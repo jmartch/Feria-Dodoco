@@ -12,6 +12,12 @@ export function crearApiVentas(cliente: Cliente) {
     listar(eventoId: string) {
       return cliente.pedir<VentaGuardada[]>(`/eventos/${eventoId}/ventas`);
     },
+    actualizar(eventoId: string, ventaId: string, cuerpo: unknown) {
+      return cliente.pedir<VentaGuardada>(`/eventos/${eventoId}/ventas/${ventaId}`, {
+        method: "PUT",
+        body: JSON.stringify(cuerpo),
+      });
+    },
     eliminar(eventoId: string, ventaId: string) {
       return cliente.pedir<void>(`/eventos/${eventoId}/ventas/${ventaId}`, { method: "DELETE" });
     },
