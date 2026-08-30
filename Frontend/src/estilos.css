@@ -311,8 +311,8 @@ input[type="radio"] { width: 20px; height: 20px; accent-color: var(--rosa); flex
   gap: 12px;
 }
 .cobro-total { display: flex; align-items: baseline; justify-content: space-between; }
-.cobro-total span { color: var(--gris); font-weight: 700; font-size: 0.9rem; }
-.cobro-total strong { font-size: 1.9rem; font-weight: 800; color: var(--tinta); letter-spacing: -0.02em; }
+.cobro-total span { color: var(--gris); font-weight: 700; font-size: 0.85rem; }
+.cobro-total strong { font-size: 1.2rem; font-weight: 800; color: var(--tinta); letter-spacing: -0.01em; }
 .cobro-pago { display: flex; align-items: flex-end; gap: 10px; }
 .cobro-pago label { flex: 1 1 auto; }
 .cobro-pago button { flex: 0 0 auto; white-space: nowrap; }
@@ -597,7 +597,7 @@ button.peligro:hover, button.peligro[type="button"]:hover { background: #b42318;
   .resumen-acciones { flex-wrap: wrap; }
   .resumen-acciones button { flex: 1 1 45%; }
 
-  .cobro-total strong { font-size: 1.65rem; }
+  .cobro-total strong { font-size: 1.15rem; }
   .stat-valor { font-size: 1.3rem; }
 
   /* Fila de venta: el subtotal y el emoji no empujan fuera. */
