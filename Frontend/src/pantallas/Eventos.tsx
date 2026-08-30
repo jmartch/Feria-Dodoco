@@ -6,7 +6,6 @@ import type { Evento } from "../api/tipos";
 import { Cargando } from "../componentes/Cargando";
 import { Aviso } from "../componentes/Aviso";
 import { Calendario } from "../componentes/Calendario";
-import { ModalConfirmar } from "../componentes/ModalConfirmar";
 
 function hoyISO() {
   return new Date().toISOString().slice(0, 10);
@@ -29,24 +28,9 @@ export function Eventos() {
   const [fechaFin, setFechaFin] = useState("");
   const [meta, setMeta] = useState(1000000);
   const [guardando, setGuardando] = useState(false);
-  // Acción destructiva pendiente de confirmar (reiniciar o eliminar una feria).
-  const [accion, setAccion] = useState<{ tipo: "reiniciar" | "eliminar"; evento: Evento } | null>(null);
 
   async function recargar() {
     setEventos(await api.listar());
-  }
-
-  async function confirmarAccion() {
-    if (!accion) return;
-    try {
-      if (accion.tipo === "reiniciar") await api.reiniciar(accion.evento.id);
-      else await api.eliminar(accion.evento.id);
-      await recargar();
-    } catch {
-      setError("No se pudo completar la acción sobre la feria.");
-    } finally {
-      setAccion(null);
-    }
   }
 
   useEffect(() => {
@@ -90,7 +74,7 @@ export function Eventos() {
 
   return (
     <section>
-      <p className="bienvenida">Bienvenido a<strong>{usuario?.nombreEmprendimiento || "tu tienda"}</strong></p>
+      <p className="bienvenida">Bienvenido a <strong>{usuario?.nombreEmprendimiento || "tu tienda"}</strong></p>
       <div className="eventos-cab">
         <h1>Eventos</h1>
         {esAdmin && (
@@ -147,16 +131,6 @@ export function Eventos() {
               </div>
               <div className="evento-acciones">
                 <Link to={`/eventos/${evento.id}/vender`} className="evento-chip vender">Abrir feria</Link>
-                {esAdmin && (
-                  <>
-                    <button type="button" className="evento-chip" onClick={() => setAccion({ tipo: "reiniciar", evento })}>
-                      Reiniciar
-                    </button>
-                    <button type="button" className="evento-chip borrar" onClick={() => setAccion({ tipo: "eliminar", evento })}>
-                      Eliminar
-                    </button>
-                  </>
-                )}
               </div>
             </div>
           ))}
@@ -174,21 +148,6 @@ export function Eventos() {
           </div>
         )}
       </div>
-
-      {accion && (
-        <ModalConfirmar
-          titulo={accion.tipo === "reiniciar" ? "Reiniciar feria" : "Eliminar feria"}
-          mensaje={
-            accion.tipo === "reiniciar"
-              ? `Se borrarán todas las ventas de “${accion.evento.nombre}”. La configuración (productos, meta, fechas) se conserva. Esta acción no se puede deshacer.`
-              : `Se eliminará por completo la feria “${accion.evento.nombre}”: sus ventas, gastos y configuración. Esta acción no se puede deshacer.`
-          }
-          textoConfirmar={accion.tipo === "reiniciar" ? "Sí, reiniciar" : "Sí, eliminar"}
-          peligro={accion.tipo === "eliminar"}
-          onConfirmar={confirmarAccion}
-          onCancelar={() => setAccion(null)}
-        />
-      )}
     </section>
   );
 }

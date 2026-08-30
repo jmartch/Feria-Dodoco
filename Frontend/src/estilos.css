@@ -44,8 +44,7 @@ body {
 main {
   max-width: var(--ancho);
   margin: 0 auto;
-  /* El relleno inferior deja aire para la barra de cobro fija al fondo. */
-  padding: 20px 16px 200px;
+  padding: 20px 16px 120px;
 }
 
 section { display: flex; flex-direction: column; gap: 18px; }
@@ -295,34 +294,40 @@ input[type="radio"] { width: 20px; height: 20px; accent-color: var(--rosa); flex
 .sel-subtotal { min-width: 84px; text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
 
 /* Barra de cobro fija al fondo de la pantalla: siempre a la mano, sin importar
-   cuántos productos haya. Compacta — total y botón comparten fila. */
+   cuántos productos haya. Tamaño normal (el usuario lo prefirió grande). */
 .cobro {
   position: fixed;
   left: 0; right: 0; bottom: 0;
   z-index: 40;
   margin: 0 auto;
   max-width: var(--ancho);
-  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
   background: rgba(255, 255, 255, 0.97);
   backdrop-filter: saturate(180%) blur(10px);
   border-top: 1px solid var(--linea);
   box-shadow: 0 -6px 24px rgba(36, 27, 40, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
-.cobro-efectivo { display: flex; flex-direction: column; gap: 8px; }
-.cobro-cta { display: flex; align-items: center; gap: 12px; }
-.cobro-total { display: flex; flex-direction: column; gap: 0; flex: 1 1 auto; min-width: 0; }
-.cobro-total span { color: var(--gris); font-weight: 700; font-size: 0.78rem; }
-.cobro-total strong { font-size: 1.5rem; font-weight: 800; color: var(--tinta); letter-spacing: -0.02em; line-height: 1.1; }
-.cobro-cta button.principal { flex: 0 0 auto; width: auto; min-width: 150px; }
+.cobro-total { display: flex; align-items: baseline; justify-content: space-between; }
+.cobro-total span { color: var(--gris); font-weight: 700; font-size: 0.9rem; }
+.cobro-total strong { font-size: 1.9rem; font-weight: 800; color: var(--tinta); letter-spacing: -0.02em; }
 .cobro-pago { display: flex; align-items: flex-end; gap: 10px; }
 .cobro-pago label { flex: 1 1 auto; }
-.cobro-pago input { min-height: 40px; }
-.cobro-pago button { flex: 0 0 auto; white-space: nowrap; min-height: 40px; }
-.cobro-cambio { display: flex; justify-content: space-between; font-weight: 700; color: var(--gris); font-size: 0.85rem; }
+.cobro-pago button { flex: 0 0 auto; white-space: nowrap; }
+.cobro-cambio { display: flex; justify-content: space-between; font-weight: 700; color: var(--gris); font-size: 0.9rem; }
 .cobro-cambio strong { color: var(--ok); }
+
+/* Espacio al final de Vender para que el último contenido no quede tapado por
+   la barra de cobro fija. */
+.espacio-cobro { height: 150px; }
+
+/* Acciones de la feria (reiniciar / eliminar) al final del módulo de ventas. */
+.feria-acciones { display: flex; gap: 10px; flex-wrap: wrap; }
+.feria-acciones button { flex: 1 1 45%; min-height: 44px; }
+.feria-acciones .peligro { background: #d92d20; border-color: #d92d20; color: #fff; }
+.feria-acciones .peligro:hover { background: #b42318; border-color: #b42318; color: #fff; }
 
 .venta-vacia { color: var(--gris); text-align: center; padding: 20px; font-weight: 600; }
 
@@ -577,7 +582,7 @@ button.peligro:hover, button.peligro[type="button"]:hover { background: #b42318;
    ========================================================================== */
 
 @media (max-width: 560px) {
-  main { padding: 16px 16px 200px; }
+  main { padding: 16px 16px 130px; }
   h1 { font-size: 1.45rem; }
 
   /* Navegación: que quepa sin desbordar; si no cabe, baja de línea. */
@@ -592,9 +597,7 @@ button.peligro:hover, button.peligro[type="button"]:hover { background: #b42318;
   .resumen-acciones { flex-wrap: wrap; }
   .resumen-acciones button { flex: 1 1 45%; }
 
-  /* Cobro compacto en celular: total y botón en fila, botón sin apretar. */
-  .cobro-total strong { font-size: 1.4rem; }
-  .cobro-cta button.principal { min-width: 130px; padding: 0 14px; }
+  .cobro-total strong { font-size: 1.65rem; }
   .stat-valor { font-size: 1.3rem; }
 
   /* Fila de venta: el subtotal y el emoji no empujan fuera. */

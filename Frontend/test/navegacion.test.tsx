@@ -11,7 +11,7 @@ it("el vendedor no ve enlaces de administración", () => {
   );
   expect(screen.getByText(/vale/i)).toBeInTheDocument();
   expect(screen.queryByRole("link", { name: /catálogo/i })).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /salir/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /cerrar sesión/i })).toBeInTheDocument();
 });
 
 it("el admin ve los enlaces de administración", () => {

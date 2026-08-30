@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { ModalConfirmar } from "../componentes/ModalConfirmar";
 import { crearApiEventos } from "../api/eventos";
 import { crearApiVentas } from "../api/ventas";
 import { crearApiCatalogo } from "../api/catalogo";
@@ -25,6 +26,7 @@ function hora(iso: string) {
 
 export function Vender() {
   const { id: eventoId = "" } = useParams();
+  const navigate = useNavigate();
   const { cliente, usuario } = useAuth();
   const apiEventos = useMemo(() => crearApiEventos(cliente), [cliente]);
   const apiVentas = useMemo(() => crearApiVentas(cliente), [cliente]);
@@ -47,6 +49,8 @@ export function Vender() {
   const [recibido, setRecibido] = useState<number>(0);
   // Cuando no es null, el formulario corrige esa venta en vez de crear una nueva.
   const [editandoId, setEditandoId] = useState<string | null>(null);
+  // Acción destructiva sobre la feria pendiente de confirmar (solo admin).
+  const [accionFeria, setAccionFeria] = useState<"reiniciar" | "eliminar" | null>(null);
   // Líneas de una venta en edición cuyo producto ya no está en el catálogo
   // (renombrado o borrado). Se conservan como "producto retirado".
   const [lineasExtra, setLineasExtra] = useState<{ nombre: string; precioUnitario: number; cantidad: number }[]>([]);
@@ -215,6 +219,24 @@ export function Vender() {
     refrescarResumen();
   }
 
+  async function confirmarFeria() {
+    if (!accionFeria) return;
+    const tipo = accionFeria;
+    setAccionFeria(null);
+    try {
+      if (tipo === "reiniciar") {
+        await apiEventos.reiniciar(eventoId);
+        refrescarResumen();
+        mostrarAviso("✅ Feria reiniciada");
+      } else {
+        await apiEventos.eliminar(eventoId);
+        navigate("/eventos");
+      }
+    } catch {
+      mostrarAviso("⚠️ No se pudo completar la acción");
+    }
+  }
+
   function exportar() {
     const archivo = nombreArchivoCSV(usuario?.nombreEmprendimiento ?? "tienda", nombreFeria || "feria");
     descargarCSV(archivo, ventasACSV(ventas));
@@ -376,8 +398,12 @@ export function Vender() {
             <button type="button" onClick={limpiarFormulario}>Cancelar</button>
           </div>
         )}
+        <div className="cobro-total">
+          <span>Total a cobrar</span>
+          <strong>{formatearPesos(calculo.total)}</strong>
+        </div>
         {esEfectivo && (
-          <div className="cobro-efectivo">
+          <>
             <div className="cobro-pago">
               <label>
                 Recibido
@@ -395,18 +421,11 @@ export function Vender() {
               <span>Cambio</span>
               <strong>{formatearPesos(calculo.cambio)}</strong>
             </div>
-          </div>
+          </>
         )}
-        {/* Total y botón en una sola fila: compacto y siempre a la mano al fondo. */}
-        <div className="cobro-cta">
-          <div className="cobro-total">
-            <span>Total a cobrar</span>
-            <strong>{formatearPesos(calculo.total)}</strong>
-          </div>
-          <button type="button" className="principal" onClick={registrar} disabled={calculo.total <= 0}>
-            {editandoId ? "Guardar cambios" : "Registrar venta"}
-          </button>
-        </div>
+        <button type="button" className="principal" onClick={registrar} disabled={calculo.total <= 0}>
+          {editandoId ? "Guardar cambios" : "Registrar venta"}
+        </button>
       </div>
 
       <h2>Ventas de hoy</h2>
@@ -444,6 +463,33 @@ export function Vender() {
             );
           })}
         </ul>
+      )}
+
+      {esAdmin && (
+        <>
+          <h2>Feria</h2>
+          <div className="feria-acciones">
+            <button type="button" onClick={() => setAccionFeria("reiniciar")}>Reiniciar feria</button>
+            <button type="button" className="peligro" onClick={() => setAccionFeria("eliminar")}>Eliminar feria</button>
+          </div>
+        </>
+      )}
+
+      <div className="espacio-cobro" aria-hidden="true" />
+
+      {accionFeria && (
+        <ModalConfirmar
+          titulo={accionFeria === "reiniciar" ? "Reiniciar feria" : "Eliminar feria"}
+          mensaje={
+            accionFeria === "reiniciar"
+              ? `Se borrarán todas las ventas de “${nombreFeria || "esta feria"}”. La configuración (productos, meta, fechas) se conserva. Esta acción no se puede deshacer.`
+              : `Se eliminará por completo la feria “${nombreFeria || "esta feria"}”: sus ventas, gastos y configuración. Esta acción no se puede deshacer.`
+          }
+          textoConfirmar={accionFeria === "reiniciar" ? "Sí, reiniciar" : "Sí, eliminar"}
+          peligro={accionFeria === "eliminar"}
+          onConfirmar={confirmarFeria}
+          onCancelar={() => setAccionFeria(null)}
+        />
       )}
     </section>
   );

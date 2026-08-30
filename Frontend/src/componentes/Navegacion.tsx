@@ -15,7 +15,7 @@ export function Navegacion({ usuario, salir }: { usuario: Usuario; salir: () => 
         </>
       )}
       <span>{usuario.nombre}</span>
-      <button type="button" onClick={salir}>Salir</button>
+      <button type="button" onClick={salir}>Cerrar sesión</button>
     </nav>
   );
 }
