@@ -376,12 +376,8 @@ export function Vender() {
             <button type="button" onClick={limpiarFormulario}>Cancelar</button>
           </div>
         )}
-        <div className="cobro-total">
-          <span>Total a cobrar</span>
-          <strong>{formatearPesos(calculo.total)}</strong>
-        </div>
         {esEfectivo && (
-          <>
+          <div className="cobro-efectivo">
             <div className="cobro-pago">
               <label>
                 Recibido
@@ -399,11 +395,18 @@ export function Vender() {
               <span>Cambio</span>
               <strong>{formatearPesos(calculo.cambio)}</strong>
             </div>
-          </>
+          </div>
         )}
-        <button type="button" className="principal" onClick={registrar} disabled={calculo.total <= 0}>
-          {editandoId ? "Guardar cambios" : "Registrar venta"}
-        </button>
+        {/* Total y botón en una sola fila: compacto y siempre a la mano al fondo. */}
+        <div className="cobro-cta">
+          <div className="cobro-total">
+            <span>Total a cobrar</span>
+            <strong>{formatearPesos(calculo.total)}</strong>
+          </div>
+          <button type="button" className="principal" onClick={registrar} disabled={calculo.total <= 0}>
+            {editandoId ? "Guardar cambios" : "Registrar venta"}
+          </button>
+        </div>
       </div>
 
       <h2>Ventas de hoy</h2>
